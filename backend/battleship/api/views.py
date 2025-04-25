@@ -1,13 +1,12 @@
-from rest_framework import viewsets
-from django.contrib.auth.models import User
-from . import serializers
 from rest_framework import viewsets, filters, status
+from django.contrib.auth.models import User
+from . import serializers, models
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 
-from .models import Player, Game
-from .serializers import PlayerSerializer, GameSerializer
+from .models import Player, Game, Vessel, Board, BoardVessel, Shot
+from .serializers import PlayerSerializer, GameSerializer, VesselSerializer, BoardSerializer, BoardVesselSerializer, ShotSerializer
 
 
 
@@ -35,3 +34,43 @@ class GameViewSet(viewsets.ModelViewSet):
         player = get_object_or_404(models.Player, user=User.objects.first())
         serializer.save(owner=player)
 
+
+class VesselViewSet(viewsets.ModelViewSet):
+    queryset = Vessel.objects.all()
+    serializer_class = VesselSerializer
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['name']
+
+class BoardViewSet(viewsets.ModelViewSet):
+    queryset = Board.objects.all()
+    serializer_class = BoardSerializer
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['player__nickname']
+
+    def perform_create(self, serializer):
+        player = get_object_or_404(Player, user=User.objects.first())
+        game = get_object_or_404(Game, id=self.request.data.get('game'))
+        serializer.save(player=player, game=game)
+
+class BoardVesselViewSet(viewsets.ModelViewSet):
+    queryset = BoardVessel.objects.all()
+    serializer_class = BoardVesselSerializer
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['vessel__name']
+
+    def perform_create(self, serializer):
+        board = get_object_or_404(Board, id=self.request.data.get('board'))
+        serializer.save(board=board)
+
+class ShotViewSet(viewsets.ModelViewSet):
+    queryset = Shot.objects.all()
+    serializer_class = ShotSerializer
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['player__nickname']
+    ordering_fields = ['id']
+
+    def perform_create(self, serializer):
+        player = get_object_or_404(Player, user=User.objects.first())
+        game = get_object_or_404(Game, id=self.request.data.get('game'))
+        board = get_object_or_404(Board, id=self.request.data.get('board'))
+        serializer.save(player=player, game=game, board=board)

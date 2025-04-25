@@ -1,6 +1,6 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
-from .models import Player, Game
+from .models import Player, Game, Vessel, Board, BoardVessel, Shot
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -17,4 +17,35 @@ class GameSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Game
+        fields = '__all__'
+
+class VesselSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Vessel
+        fields = '__all__'
+
+class BoardSerializer(serializers.ModelSerializer):
+    player = serializers.ReadOnlyField(source='player.nickname')
+    game = serializers.ReadOnlyField(source='game.id')
+
+    class Meta:
+        model = Board
+        fields = '__all__'
+
+class BoardVesselSerializer(serializers.ModelSerializer):
+    vessel = serializers.ReadOnlyField(source='vessel.name')
+    board = serializers.ReadOnlyField(source='board.id')
+
+    class Meta:
+        model = BoardVessel
+        fields = '__all__'
+
+class ShotSerializer(serializers.ModelSerializer):
+    player = serializers.ReadOnlyField(source='player.nickname')
+    game = serializers.ReadOnlyField(source='game.id')
+    board = serializers.ReadOnlyField(source='board.id')
+    board_vessel = serializers.ReadOnlyField(source='board_vessel.id', allow_null=True)
+
+    class Meta:
+        model = Shot
         fields = '__all__'
