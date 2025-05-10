@@ -4,9 +4,9 @@
 > Afegiu la informació del grup, substituint G pel grup i XX per l'equip. 
 > Afegiu el nom i cognoms dels membres de l'equip
 
-| Equip | Membre 1     | Membre 2     |
-|-------|--------------|--------------|
-|  GXX  | Cognoms, Nom | Cognoms, Nom | 
+| Equip | Membre 1            | Membre 2             |
+|-------|---------------------|----------------------|
+| G03   | Garcia Rovira, Èlia | Haro Fernández, Anna | 
 
 
 > [!CAUTION]
@@ -14,6 +14,7 @@
 > ` { {#authors user1,user2} }`. Fixeu-vos en l'exemple d'aquesta pàgina.
 
 {{#authors xbaro,pianoza,eloipuertas}}
+{{#authors eliagarcia, annaaaharo}}
 
 
 > [!CAUTION]
