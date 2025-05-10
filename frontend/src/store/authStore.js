@@ -9,8 +9,23 @@ export const useAuthStore = defineStore("auth", {
     isAuthenticated: false,
     loading: false,
     error: null,
+      playersList: [],
   }),
   actions: {
+      async getAllPlayers() {
+      try {
+        const response = await AuthService.getAllPlayers();
+        for (const player of response.data) {
+          this.playersList.push({
+            id: player.id,
+            nickname: player.nickname,
+          });
+        }
+      } catch (error) {
+        const message = error.response?.data?.detail || error.message;
+        throw new Error(message);
+      }
+    },
     initializeAuthStore() {
       this.username = localStorage.getItem("username");
       this.accessToken = localStorage.getItem("access");

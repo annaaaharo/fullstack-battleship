@@ -9,7 +9,9 @@ const password = ref("");
 
 onMounted(() => {
   authStore.initializeAuthStore();
+  authStore.getAllPlayers();
 });
+
 
 const startGame = () => {
   window.location.href = "/game";
@@ -29,6 +31,18 @@ const logOut = () => {
 </script>
 
 <template>
+  <div v-if="authStore.playersList.length > 0" class="mt-5">
+  <h3>Jugadors disponibles</h3>
+  <ul class="list-group">
+    <li
+      v-for="player in authStore.playersList"
+      :key="player.id"
+      class="list-group-item"
+    >
+      {{ player.nickname }}
+    </li>
+  </ul>
+</div>
   <div class="home text-center mt-4">
     <h1>Welcome to Battleship Game</h1>
 

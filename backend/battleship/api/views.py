@@ -4,6 +4,7 @@ from . import serializers, models
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
+from rest_framework.permissions import AllowAny
 
 from .models import Player, Game, Vessel, Board, BoardVessel, Shot
 from .serializers import PlayerSerializer, GameSerializer, VesselSerializer, BoardSerializer, BoardVesselSerializer, ShotSerializer
@@ -22,6 +23,7 @@ class PlayerViewSet(viewsets.ModelViewSet):
     serializer_class = PlayerSerializer
     filter_backends = [filters.SearchFilter]
     search_fields = ['nickname']
+    permission_classes = [AllowAny]
 
 class GameViewSet(viewsets.ModelViewSet):
     queryset = Game.objects.all()

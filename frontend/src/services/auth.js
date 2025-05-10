@@ -27,6 +27,10 @@ class AuthService {
     localStorage.removeItem("refresh");
   }
 
+    getAllPlayers() {
+    return this.getAxiosInstance().get("/api/v1/players/");
+  }
+
   getAccessToken() {
     return localStorage.getItem("access");
   }
