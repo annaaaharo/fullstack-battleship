@@ -6,7 +6,7 @@
 
 | Equip | Membre 1            | Membre 2             |
 |-------|---------------------|----------------------|
-| G03   | Garcia Rovira, Èlia | Haro Fernández, Anna | 
+| C03   | Garcia Rovira, Èlia | Haro Fernández, Anna | 
 
 
 > [!CAUTION]
