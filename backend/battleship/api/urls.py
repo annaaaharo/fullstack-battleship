@@ -1,20 +1,20 @@
+from django.contrib import admin
 from django.urls import path, include
-from rest_framework.routers import DefaultRouter
-from . import views
-from .views import PlayerViewSet, GameViewSet, VesselViewSet, BoardViewSet, BoardVesselViewSet, ShotViewSet
-# Create a router and register our ViewSets with it.
-router = DefaultRouter()
+from django.shortcuts import redirect
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
-router.register(r'user', views.UserViewSet, basename='user')
+def redirect_to_docs(request):
+    return redirect('swagger-ui')
 
-router.register(r'players', PlayerViewSet)
-router.register(r'games', GameViewSet)
-router.register(r'vessels', VesselViewSet)
-router.register(r'boards', BoardViewSet)
-router.register(r'board-vessels', BoardVesselViewSet)
-router.register(r'shots', ShotViewSet)
 
 urlpatterns = [
-    path("", include(router.urls)),
+    path('', redirect_to_docs, name='home'),
+    path('admin/', admin.site.urls),
+    path("schema/", SpectacularAPIView.as_view(), name="schema"),
+    path("docs/", SpectacularSwaggerView.as_view(url_name="schema"),name="swagger-ui"),
+    path(r'ht/', include('health_check.urls')),
+    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path("api/v1/", include('battleship.api.urls'))
 ]
-#http://127.0.0.1:8000/api/v1/

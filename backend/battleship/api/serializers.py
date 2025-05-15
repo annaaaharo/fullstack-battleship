@@ -18,6 +18,8 @@ class GameSerializer(serializers.ModelSerializer):
     class Meta:
         model = Game
         fields = '__all__'
+        #extended_status = serializaer.
+        #quan un joc es serialitzi crea un nou atribut on hi haurà el resultat de la crida del metedo del serialitzador get_extended_status
 
 class VesselSerializer(serializers.ModelSerializer):
     class Meta:
