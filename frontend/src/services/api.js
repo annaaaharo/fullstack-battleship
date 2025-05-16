@@ -1,6 +1,7 @@
 import AuthService from "@/services/auth.js";
 const axiosInstance = AuthService.getAxiosInstance();
 
+
 export default {
   getAvailableShips() {
     return Promise.resolve([
