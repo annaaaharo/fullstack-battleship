@@ -1,13 +1,16 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
+
 from rest_framework_nested.routers import NestedSimpleRouter
 
 from .views import PlayerViewSet, GameViewSet, VesselViewSet, BoardViewSet, BoardVesselViewSet, ShotViewSet, \
     UserViewSet
 
+
 router = DefaultRouter()
 router.register(r'players', PlayerViewSet)
 router.register(r'games', GameViewSet)
+
 
 router.register(r'vessels', VesselViewSet, basename='vessels')
 router.register(r'boards', BoardViewSet, basename='boards')
@@ -29,6 +32,7 @@ game_players_router.register(r'shots', ShotViewSet, basename='game-player-shots'
 
 # /api/v1/games/{gid}/players/{pid}/boards/
 game_players_router.register(r'boards', BoardViewSet, basename='game-player-boards')
+
 
 urlpatterns = [
     path('', include(router.urls)),

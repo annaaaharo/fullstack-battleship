@@ -18,11 +18,13 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
     """
     This viewset automatically provides `list` and `retrieve` actions.
     """
+
     queryset = User.objects.all()
     serializer_class = UserSerializer
     filter_backends = [filters.SearchFilter]
     search_fields = ['username', 'email']
     permission_classes = [permissions.IsAdminUser]
+
 
 class PlayerViewSet(viewsets.ModelViewSet):
     queryset = Player.objects.all()
