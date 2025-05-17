@@ -3,19 +3,27 @@ from django.contrib.auth.models import User
 from . import serializers, models
 from rest_framework.decorators import action
 from rest_framework.response import Response
+
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import AllowAny
 
 from .models import Player, Game, Vessel, Board, BoardVessel, Shot
 from .serializers import PlayerSerializer, GameSerializer, VesselSerializer, BoardSerializer, BoardVesselSerializer, ShotSerializer
-from .serializers import PlayerSerializer, GameSerializer, UserSerializer
+from rest_framework import viewsets, permissions
 from django.contrib.auth.models import User
+from .serializers import UserSerializer
 
-class UserViewSet(viewsets.ModelViewSet):
+
+class UserViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    This viewset automatically provides `list` and `retrieve` actions.
+    """
+
     queryset = User.objects.all()
     serializer_class = UserSerializer
     filter_backends = [filters.SearchFilter]
     search_fields = ['username', 'email']
+    permission_classes = [permissions.IsAdminUser]
 
 
 class PlayerViewSet(viewsets.ModelViewSet):
