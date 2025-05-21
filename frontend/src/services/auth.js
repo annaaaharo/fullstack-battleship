@@ -8,6 +8,13 @@ class AuthService {
     });
   }
 
+  register(user) {
+    return axios.post("/api/v1/users/", {
+      username: user.username,
+      email: user.email,
+      password: user.password,
+    });
+  }
   refresh(refreshToken) {
     return Promise.resolve(
         JSON.stringify({

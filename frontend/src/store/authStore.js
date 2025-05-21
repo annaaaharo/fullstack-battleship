@@ -60,6 +60,28 @@ export const useAuthStore = defineStore("auth", {
         });
     },
 
+      register(user) {
+          this.loading = true;
+          this.error = null;
+
+          return AuthService.register(user)
+              .then(() => {
+
+                  return this.login(user);
+              })
+              .catch((error) => {
+                  this.error =
+                      error.response?.data?.username?.[0] ||
+                      error.response?.data?.email?.[0] ||
+                      "Error durant el registre.";
+                  throw error; // permet mostrar l'error des del component
+              })
+              .finally(() => {
+                  this.loading = false;
+              });
+      },
+
+
     logout() {
       this.accessToken = null;
       this.refreshToken = null;

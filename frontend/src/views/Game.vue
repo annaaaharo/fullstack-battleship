@@ -26,6 +26,11 @@ const authStore = useAuthStore();
 // }
 
 onMounted(() => {
+   if (!authStore.isAuthenticated) {
+    window.location.href = "/";
+    return;
+  }
+
   // To start a new game, uncomment the line below
   // store.startNewGame();
   // To fetch the game state, uncomment the line below

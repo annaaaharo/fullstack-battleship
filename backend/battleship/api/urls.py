@@ -5,6 +5,7 @@ from rest_framework_nested.routers import NestedSimpleRouter
 
 from .views import PlayerViewSet, GameViewSet, VesselViewSet, BoardViewSet, BoardVesselViewSet, ShotViewSet, \
     UserViewSet
+from rest_framework import routers
 
 
 router = DefaultRouter()
@@ -17,7 +18,9 @@ router.register(r'boards', BoardViewSet, basename='boards')
 router.register(r'boardvessels', BoardVesselViewSet, basename='boardvessels')
 router.register(r'shots', ShotViewSet, basename='shots')
 
-router.register(r'user', UserViewSet)
+# router.register(r'user', UserViewSet)
+
+router.register(r'users', UserViewSet, basename='user')
 
 # /api/v1/games/{gid}/players/
 games_router = NestedSimpleRouter(router, r'games', lookup='game')

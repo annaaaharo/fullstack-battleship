@@ -4,15 +4,36 @@ from .models import Player, Game, Vessel, Board, BoardVessel, Shot
 from django.contrib.auth.models import User
 
 class UserSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
+
     class Meta:
         model = User
-        fields = ['username', 'email']
+        fields = ['username', 'email', 'password']
+
+    def create(self, validated_data):
+        user = User.objects.create_user(
+            username=validated_data['username'],
+            email=validated_data['email'],
+            password=validated_data['password']
+        )
+        return user
 
 class UserSerializer(serializers.ModelSerializer):
+
+    password = serializers.CharField(write_only=True)
+
     class Meta:
         model = User
-        fields = '__all__'
+        fields = ("username", "email", "password")
         # exclude = ('password',)
+
+        def create(self, validated_data):
+            return User.objects.create_user(
+                username=validated_data['username'],
+                email=validated_data.get('email'),
+                password=validated_data['password']
+
+            )
 class PlayerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Player
