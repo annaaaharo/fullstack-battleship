@@ -28,12 +28,15 @@ class UserSerializer(serializers.ModelSerializer):
         # exclude = ('password',)
 
         def create(self, validated_data):
-            return User.objects.create_user(
-                username=validated_data['username'],
-                email=validated_data.get('email'),
-                password=validated_data['password']
-
+            user = User.objects.create_user(
+                username=validated_data["username"],
+                email=validated_data.get("email"),
+                password=validated_data["password"]
             )
+            user.is_active = True
+            user.save()
+            return user
+
 class PlayerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Player
