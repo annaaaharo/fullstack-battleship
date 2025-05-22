@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import AuthService from "../services/auth";
+import api from "@/services/api.js";
 
 export const useAuthStore = defineStore("auth", {
   state: () => ({
@@ -10,6 +11,7 @@ export const useAuthStore = defineStore("auth", {
     loading: false,
     error: null,
       playersList: [],
+    playerId: null,
   }),
   actions: {
       async getAllPlayers() {
@@ -31,13 +33,14 @@ export const useAuthStore = defineStore("auth", {
       this.accessToken = localStorage.getItem("access");
       this.refreshToken = localStorage.getItem("refresh");
       this.isAuthenticated = !!this.accessToken;
+      this.playerId = localStorage.getItem("playerId");
     },
     login(user) {
         this.loading = true;
         this.error = null;
 
         return AuthService.login(user)
-        .then((response) => {
+        .then(async (response) => {
             console.log("response", response);
             // response = JSON.parse(response); // això era una simulació, en el cas real és una resposta d'axios i podem comentar aquesta línia
             this.username = user.username;
@@ -48,6 +51,10 @@ export const useAuthStore = defineStore("auth", {
             localStorage.setItem("username", this.username);
             localStorage.setItem("access", this.accessToken);
             localStorage.setItem("refresh", this.refreshToken);
+
+            const playResponse = await api.findPlayer(user.username);
+            this.playerId = playResponse[0].id;
+            localStorage.setItem("playerId", this.playerId);
         })
         .catch((error) => {
             console.log("error", error);
@@ -86,9 +93,11 @@ export const useAuthStore = defineStore("auth", {
       this.accessToken = null;
       this.refreshToken = null;
       this.isAuthenticated = false;
+      this.playerId = null;
       localStorage.removeItem("username");
       localStorage.removeItem("access");
       localStorage.removeItem("refresh");
+      localStorage.removeItem("playerId");
     },
   },
 });

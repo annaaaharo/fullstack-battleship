@@ -10,9 +10,9 @@ const confirmPassword = ref("");
 const email = ref("");
 const registerError = ref("");
 
-onMounted(() => {
+onMounted(async () => {
   authStore.initializeAuthStore();
-  authStore.getAllPlayers();
+  await authStore.getAllPlayers();
 });
 
 

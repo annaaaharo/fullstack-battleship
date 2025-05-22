@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import api from "../services/api";
+import {useAuthStore} from "@/store/authStore.js";
 
 export const useGameStore = defineStore("game", {
   state: () => ({
@@ -26,7 +27,7 @@ export const useGameStore = defineStore("game", {
         });
     },
 
-    async getGameState(gameId) {
+    /*async getGameState(gameId) {
       return api
         .getGameState(gameId)
         .then((response) => {
@@ -54,6 +55,20 @@ export const useGameStore = defineStore("game", {
           const message = error.response?.data?.detail || error.message;
           throw new Error(message);
         });
+    },*/
+    async getGameState(gameId) {
+      return api
+        .getGameState(gameId)
+        .then((response) => {
+          const game = response.data;
+          console.log("game", game);
+          this.gamePhase = game.phase;
+          this.gameStatus = `Game phase: ${game.phase}`;
+        })
+        .catch((error) => {
+          const message = error.response?.data?.detail || error.message;
+          throw new Error(message);
+        });
     },
     createEmptyBoard() {
       return Array(10)
@@ -72,6 +87,11 @@ export const useGameStore = defineStore("game", {
       this.availableShips = await api.getAvailableShips(); // TODO check with axios on how to avoid await.
 
       this.placeOpponentShips();
+    },
+    async obtainId(){
+      const idPlayer = (useAuthStore()).playerId;
+      const id = await api.setGame(idPlayer);
+      return id;
     },
 
     placeShip(board, row, col, size, isVertical, type) {

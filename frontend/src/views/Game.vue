@@ -25,16 +25,19 @@ const authStore = useAuthStore();
 //   console.log(user.value);
 // }
 
-onMounted(() => {
+onMounted(async () => {
    if (!authStore.isAuthenticated) {
     window.location.href = "/";
     return;
   }
 
   // To start a new game, uncomment the line below
-  // store.startNewGame();
+  store.startNewGame();
+  const gameId = await store.obtainId();
+
   // To fetch the game state, uncomment the line below
-  store.getGameState();
+
+  await store.getGameState(gameId);
   // getUsers();
 });
 
