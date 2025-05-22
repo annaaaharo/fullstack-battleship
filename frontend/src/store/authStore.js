@@ -2,6 +2,7 @@ import { defineStore } from "pinia";
 import AuthService from "../services/auth";
 import api from "@/services/api.js";
 
+
 export const useAuthStore = defineStore("auth", {
   state: () => ({
     username: null,
@@ -16,7 +17,7 @@ export const useAuthStore = defineStore("auth", {
   actions: {
       async getAllPlayers() {
       try {
-        const response = await AuthService.getAllPlayers();
+        const response = await api.getAllPlayers();
         for (const player of response.data) {
           this.playersList.push({
             id: player.id,

@@ -40,4 +40,21 @@ export default {
   getUser(id) {
     return axiosInstance.get(`/api/v1/user/${id}`);
   },
+
+  findPlayer(username) {
+  return axiosInstance.get(`/api/v1/players/?search=${username}`)
+    .then(response => response.data);
+  },
+  getAllPlayers() {
+    return axiosInstance.get("/api/v1/players/");
+  },
+
+  setGame(playerId) {
+  // Exemple: crea una nova partida per un jugador
+    return axiosInstance.post("/api/v1/games/", { player: playerId })
+      .then(response => response.data.id);  // Retorna l’ID del joc creat
+  },
+
+
+
 };

@@ -19,7 +19,7 @@ class Game(models.Model):
         PHASE_GAMEOVER: "Game Over",
     }
 
-    players = models.ManyToManyField(Player, related_name="games")
+    players = models.ManyToManyField(Player, related_name="games", null=True, blank=True)
     width = models.IntegerField(validators=[MinValueValidator(5), MaxValueValidator(200)], default=10)
     height = models.IntegerField(validators=[MinValueValidator(5), MaxValueValidator(200)], default=10)
     multiplayer = models.BooleanField(default=False)

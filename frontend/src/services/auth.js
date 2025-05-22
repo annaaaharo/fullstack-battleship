@@ -16,21 +16,20 @@ class AuthService {
     });
   }
   refresh(refreshToken) {
-    return Promise.resolve(
-        JSON.stringify({
-          access: "mockAccessToken",
-        })
-    );
-  }
+    return axios.post("/api/token/refresh/", {
+      refresh: refreshToken,
+    });
+}
+
 
   logout() {
     localStorage.removeItem("access");
     localStorage.removeItem("refresh");
   }
 
-  getAllPlayers() {
-    return this.getAxiosInstance().get("/api/v1/players/");
-  }
+  //getAllPlayers() {
+    //return this.getAxiosInstance().get("/api/v1/players/");
+  //}
 
   getAccessToken() {
     return localStorage.getItem("access");
@@ -70,6 +69,8 @@ class AuthService {
           return Promise.reject(error);
         }
     );
+    return instance;
+
   }
 }
 

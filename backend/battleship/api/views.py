@@ -43,6 +43,7 @@ class GameViewSet(viewsets.ModelViewSet):
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['phase']
     ordering_fields = ['id']
+    permissions_classes = [AllowAny]
 
     def perform_create(self, serializer):
         player = get_object_or_404(models.Player, user=User.objects.first())
