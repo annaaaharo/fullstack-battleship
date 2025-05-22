@@ -1,4 +1,5 @@
 import AuthService from "@/services/auth.js";
+import axios from "axios";
 const axiosInstance = AuthService.getAxiosInstance();
 
 
@@ -46,7 +47,7 @@ export default {
     .then(response => response.data);
   },
   getAllPlayers() {
-    return axiosInstance.get("/api/v1/players/");
+    return AuthService.getAxiosInstance().get("/api/v1/players/");
   },
 
   setGame(playerId) {
@@ -54,6 +55,23 @@ export default {
     return axiosInstance.post("/api/v1/games/", { player: playerId })
       .then(response => response.data.id);  // Retorna l’ID del joc creat
   },
+
+  createGame(){
+    return axios.post("/api/v1/games/", {
+      "width": 10,
+      "height": 10,
+    });
+  },
+
+  placeShip(data){
+    return axios.post("/api/v1/games/", data);
+  },
+
+  fireShot(data){
+    return axios.post("/api/v1/shots/", data);
+  }
+
+
 
 
 
