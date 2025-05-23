@@ -43,11 +43,21 @@ class GameViewSet(viewsets.ModelViewSet):
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['phase']
     ordering_fields = ['id']
-    permissions_classes = [AllowAny]
+    permission_classes = [AllowAny]
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
 
     def perform_create(self, serializer):
         player = get_object_or_404(models.Player, user=User.objects.first())
         serializer.save(owner=player)
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, context={'request': request})
+        return Response(serializer.data)
 
 
 class VesselViewSet(viewsets.ModelViewSet):
@@ -56,6 +66,8 @@ class VesselViewSet(viewsets.ModelViewSet):
     filter_backends = [filters.SearchFilter]
     search_fields = ['name']
 
+
+
 class BoardViewSet(viewsets.ModelViewSet):
     queryset = Board.objects.all()
     serializer_class = BoardSerializer
@@ -63,9 +75,13 @@ class BoardViewSet(viewsets.ModelViewSet):
     search_fields = ['player__nickname']
 
     def perform_create(self, serializer):
-        player = get_object_or_404(Player, user=User.objects.first())
+        player = get_object_or_404(models.Player, user=User.objects.first())
         game = get_object_or_404(Game, id=self.request.data.get('game'))
         serializer.save(player=player, game=game)
+
+def all_vessels_placed(board):
+    total_vessels = Vessel.objects.count()
+    return BoardVessel.objects.filter(board=board).count() == total_vessels
 
 class BoardVesselViewSet(viewsets.ModelViewSet):
     queryset = BoardVessel.objects.all()
@@ -74,8 +90,18 @@ class BoardVesselViewSet(viewsets.ModelViewSet):
     search_fields = ['vessel__name']
 
     def perform_create(self, serializer):
-        board = get_object_or_404(Board, id=self.request.data.get('board'))
-        serializer.save(board=board)
+        board_vessel = serializer.save()
+        game = board_vessel.board.game
+        print("➡️ Vessel placed. Game:", game.id)
+
+        boards = game.board_set.all()
+        print("🔎 Number of boards:", boards.count())
+        if boards.count() == 2:
+            if all(all_vessels_placed(board) for board in boards):
+                print("✅ All vessels placed. Changing phase to 'playing'.")
+                game.phase = "playing"
+                game.turn = boards.first().owner  # o el jugador que vulguis
+                game.save()
 
 class ShotViewSet(viewsets.ModelViewSet):
     queryset = Shot.objects.all()
@@ -85,7 +111,7 @@ class ShotViewSet(viewsets.ModelViewSet):
     ordering_fields = ['id']
 
     def perform_create(self, serializer):
-        player = get_object_or_404(Player, user=User.objects.first())
+        player = get_object_or_404(models.Player, user=User.objects.first())
         game = get_object_or_404(Game, id=self.request.data.get('game'))
         board = get_object_or_404(Board, id=self.request.data.get('board'))
         serializer.save(player=player, game=game, board=board)

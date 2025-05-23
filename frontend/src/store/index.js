@@ -61,15 +61,36 @@ export const useGameStore = defineStore("game", {
         .getGameState(gameId)
         .then((response) => {
           const game = response.data;
-          console.log("game", game);
           this.gamePhase = game.phase;
-          this.gameStatus = `Game phase: ${game.phase}`;
+
+          const gameState = game.game_state_response?.data?.gameState;
+
+          if (gameState?.player1 && gameState?.player2) {
+            this.playerBoard = gameState.player1.board;
+            this.opponentBoard = gameState.player2.board;
+            this.playerPlacedShips = gameState.player1.placedShips;
+            this.opponentShips = gameState.player2.placedShips;
+            this.availableShips = gameState.player1.availableShips;
+            this.gamePhase = gameState.phase;
+
+            if (this.gamePhase === "playing") {
+              this.gameStatus =
+                gameState.turn === "player1" ? "Your turn" : "Opponent's turn";
+            } else if (this.gamePhase === "placement") {
+              this.gameStatus = "Place your ships";
+            } else if (this.gamePhase === "gameOver") {
+              this.gameStatus = "Game Over - Winner " + gameState.winner;
+            }
+          } else {
+            this.gameStatus = `Game phase: ${this.gamePhase} (incomplete data)`;
+          }
         })
         .catch((error) => {
           const message = error.response?.data?.detail || error.message;
           throw new Error(message);
         });
     },
+
     createEmptyBoard() {
       return Array(10)
         .fill()
@@ -89,8 +110,9 @@ export const useGameStore = defineStore("game", {
       this.placeOpponentShips();
     },
     async obtainId(){
-      const idPlayer = (useAuthStore()).playerId;
+      const idPlayer = useAuthStore().playerId;
       const id = await api.setGame(idPlayer);
+      this.gameId = id;
       return id;
     },
 
@@ -161,40 +183,42 @@ export const useGameStore = defineStore("game", {
       }
     },
 
-    handlePlayerBoardClick(row, col) {
+    async handlePlayerBoardClick(row, col) {
       if (this.gamePhase !== "placement" || !this.selectedShip) return;
 
       const ship = this.selectedShip;
       if (
-        !this.isValidPlacement(
-          this.playerBoard,
-          row,
-          col,
-          ship.size,
-          ship.isVertical
-        )
+          !this.isValidPlacement(
+              this.playerBoard,
+              row,
+              col,
+              ship.size,
+              ship.isVertical
+          )
       )
         return;
 
       this.placeShip(
-        this.playerBoard,
-        row,
-        col,
-        ship.size,
-        ship.isVertical,
-        ship.type
+          this.playerBoard,
+          row,
+          col,
+          ship.size,
+          ship.isVertical,
+          ship.type
       );
 
-      this.playerPlacedShips.push({ ...ship, position: { row, col } });
+      this.playerPlacedShips.push({...ship, position: {row, col}});
 
       this.availableShips = this.availableShips.filter(
-        (s) => s.type !== ship.type
+          (s) => s.type !== ship.type
       );
       this.selectedShip = null;
 
       if (this.availableShips.length === 0) {
-        this.gamePhase = "playing";
-        this.gameStatus = "Your turn";
+        const authStore = useAuthStore(); // necessari perquè `playerId` està a l'altre store
+        const gameId = await api.setGame(authStore.playerId); // només si no tens `this.gameId` guardat
+
+        await this.getGameState(gameId);
       }
     },
 

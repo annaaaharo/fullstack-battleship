@@ -63,16 +63,14 @@ export default {
     });
   },
 
-  placeShip(data){
-    return axios.post("/api/v1/games/", data);
+  placeShip(boardId, data) {
+    return axiosInstance.post(`/api/v1/boards/${boardId}/vessels/`, data);
   },
 
-  fireShot(data){
-    return axios.post("/api/v1/shots/", data);
-  }
 
-
-
+  fireShot(data) {
+    return axiosInstance.post(`/api/v1/shots/`, data);
+    },
 
 
 };
