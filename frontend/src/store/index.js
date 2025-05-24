@@ -12,6 +12,8 @@ export const useGameStore = defineStore("game", {
     opponentShips: [],
     availableShips: [],
     selectedShip: null,
+    contadorHitsPlayer: 0,
+    contadorHitsBot: 0,
   }),
 
   actions: {
@@ -223,7 +225,7 @@ export const useGameStore = defineStore("game", {
       }
     },
 
-    handleOpponentBoardClick(row, col) {
+    async handleOpponentBoardClick(row, col) {
       if (this.gamePhase !== "playing") return;
       if (this.opponentBoard[row][col] < 0) {
         this.gameStatus = "Already hit!";
@@ -235,19 +237,24 @@ export const useGameStore = defineStore("game", {
       // const isHit = api.checkHit(row, col);
       var isHit = false;
       if (
-        this.opponentBoard[row][col] > 0 &&
-        this.opponentBoard[row][col] < 10
+          this.opponentBoard[row][col] > 0 &&
+          this.opponentBoard[row][col] < 10
       ) {
         isHit = true;
+        this.contadorHitsPlayer++;
       }
 
       this.opponentBoard[row][col] = isHit ? -this.opponentBoard[row][col] : 11;
       this.gameStatus = isHit ? "Hit!" : "Miss!";
 
       setTimeout(this.opponentTurn, 1000);
+      if (this.contadorHitsPlayer === 15) {
+        const gameId = await api.setGame(authStore.playerId); // només si no tens `this.gameId` guardat
+        api.setWinner("gameOver", "player1", gameId);
+      }
     },
 
-    opponentTurn() {
+    async opponentTurn() {
       let row,
         col,
         valid = false;
@@ -260,7 +267,15 @@ export const useGameStore = defineStore("game", {
 
       const isHit =
         this.playerBoard[row][col] > 0 && this.playerBoard[row][col] < 10;
+      if(isHit){
+        this.contadorHitsBot++;
+      }
       this.playerBoard[row][col] = isHit ? -this.playerBoard[row][col] : 11;
+      if(this.contadorHitsBot === 15){
+        const gameId = await api.setGame(authStore.playerId); // només si no tens `this.gameId` guardat
+        api.setWinner("gameOver","player2", gameId);
+        //winner
+      }
       this.gameStatus = "Your turn";
     },
   },

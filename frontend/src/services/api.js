@@ -59,6 +59,9 @@ export default {
   setGameState(phase1, turn, id){
     return axiosInstance.post(`/api/v1/games/${id}/update_phase/`, {"phase": phase1, "turn": turn, "id": id});
   },
+  setWinner(phase1, winner, id){
+    return axiosInstance.post(`/api/v1/games/${id}/setWinner/`, {"phase": phase1, "winner": winner, "id": id});
+  },
 
   createGame(){
     return axios.post("/api/v1/games/", {

@@ -69,6 +69,16 @@ class GameViewSet(viewsets.ModelViewSet):
         game.save()
         return Response({"status": "updated"})
 
+    @action(detail=True, methods=["post"])
+    def update_winner(self, request, pk=None):
+        game = self.get_object()
+        phase = request.data.get("phase")
+        winner = request.data.get("winner")
+        game.winner = winner
+        game.phase = phase
+        game.save()
+        return Response({"status": "updated"})
+
 
 class VesselViewSet(viewsets.ModelViewSet):
     queryset = Vessel.objects.all()
