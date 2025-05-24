@@ -106,6 +106,7 @@ export const useGameStore = defineStore("game", {
       this.availableShips = await api.getAvailableShips(); // TODO check with axios on how to avoid await.
 
       this.placeOpponentShips();
+
     },
     async obtainId(){
       const idPlayer = useAuthStore().playerId;
@@ -216,9 +217,8 @@ export const useGameStore = defineStore("game", {
         const authStore = useAuthStore(); // necessari perquè `playerId` està a l'altre store
         const gameId = await api.setGame(authStore.playerId); // només si no tens `this.gameId` guardat
         api.setGameState("playing","player1", gameId);
-        const gameState = await this.getGameState(gameId);
-        this.gamePhase = await gameState;
-
+        await this.getGameState(gameId);
+        console.log("PHASE: " + this.gamePhase);
 
       }
     },
