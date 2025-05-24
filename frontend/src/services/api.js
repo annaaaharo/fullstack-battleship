@@ -56,6 +56,10 @@ export default {
       .then(response => response.data.id);  // Retorna l’ID del joc creat
   },
 
+  setGameState(phase1, turn, id){
+    return axiosInstance.post(`/api/v1/games/${id}/update_phase/`, {"phase": phase1, "turn": turn, "id": id});
+  },
+
   createGame(){
     return axios.post("/api/v1/games/", {
       "width": 10,

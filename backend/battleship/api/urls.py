@@ -36,6 +36,8 @@ game_players_router.register(r'shots', ShotViewSet, basename='game-player-shots'
 # /api/v1/games/{gid}/players/{pid}/boards/
 game_players_router.register(r'boards', BoardViewSet, basename='game-player-boards')
 
+#/api/v1/games/{gid}/update_phase/
+game_players_router.register(r'games', GameViewSet, basename='update_phase')
 
 urlpatterns = [
     path('', include(router.urls)),

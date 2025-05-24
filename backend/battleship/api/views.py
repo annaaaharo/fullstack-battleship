@@ -59,6 +59,16 @@ class GameViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(instance, context={'request': request})
         return Response(serializer.data)
 
+    @action(detail=True, methods=["post"])
+    def update_phase(self, request, pk=None):
+        game = self.get_object()
+        phase = request.data.get("phase")
+        turn  = request.data.get("turn")
+        game.turn = turn
+        game.phase = phase
+        game.save()
+        return Response({"status": "updated"})
+
 
 class VesselViewSet(viewsets.ModelViewSet):
     queryset = Vessel.objects.all()

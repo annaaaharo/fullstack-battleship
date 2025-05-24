@@ -83,7 +83,7 @@ const onLogout = () => {
       <div v-else class="col-lg-2 d-flex flex-column justify-content-center">
         <div class="game-controls text-center">
           <div class="game-status mb-3">{{ store.gameStatus }}</div>
-          <button class="btn btn-primary" @click="store.startNewGame()">
+          <button v-if="store.gamePhase === 'waiting'" class="btn btn-primary" @click="store.startNewGame()">
             New Game
           </button>
         </div>

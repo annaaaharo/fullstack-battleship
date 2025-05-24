@@ -90,7 +90,14 @@ class GameStateResponseSerializer(serializers.Serializer):
 
     def get_data(self, obj):
         return {
-            'gameState': GameStateSerializer(obj).data
+            "gameState": {
+                "gameId": str(obj.id),
+                "phase": obj.phase,
+                "turn": obj.turn,
+                "winner": obj.winner,
+                "player1": None,
+                "player2": None
+            }
         }
 
 class GameStateSerializer(serializers.Serializer):
@@ -103,20 +110,15 @@ class GameStateSerializer(serializers.Serializer):
 
     def get_player1(self, obj):
         request = self.context.get('request')
-        print("Request user:", request.user if request else "No request in context")
-        if not request or not hasattr(request.user, 'player'):
-            print("No player found for user")
+        if not request:
             return None
         current_player = request.user.player
-        try:
-            board = Board.objects.get(game=obj, owner=current_player)
-        except Board.DoesNotExist:
-            return None
+        board = Board.objects.get(game=obj, owner=current_player)
         return PlayerStateSerializer(board).data
 
     def get_player2(self, obj):
         request = self.context.get('request')
-        if not request or not hasattr(request.user, 'player'):
+        if not request:
             return None
         current_player = request.user.player
         board = obj.board_set.exclude(owner=current_player).first()

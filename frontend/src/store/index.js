@@ -27,7 +27,8 @@ export const useGameStore = defineStore("game", {
         });
     },
 
-    /*async getGameState(gameId) {
+    /*
+    async getGameState(gameId) {
       return api
         .getGameState(gameId)
         .then((response) => {
@@ -40,8 +41,8 @@ export const useGameStore = defineStore("game", {
           this.opponentShips = gameState.player2.placedShips;
           this.availableShips = gameState.player1.availableShips;
           this.gamePhase = gameState.phase;
-          // this.gameStatus =
-          //   gameState.turn === "player1" ? "Your turn" : "Opponent's turn";
+          this.gameStatus =
+             gameState.turn === "player1" ? "Your turn" : "Opponent's turn";
           if (this.gamePhase === "playing") {
             this.gameStatus =
               gameState.turn === "player1" ? "Your turn" : "Opponent's turn";
@@ -55,23 +56,23 @@ export const useGameStore = defineStore("game", {
           const message = error.response?.data?.detail || error.message;
           throw new Error(message);
         });
-    },*/
+    },
+
+    */
     async getGameState(gameId) {
       return api
         .getGameState(gameId)
         .then((response) => {
           const game = response.data;
           this.gamePhase = game.phase;
-
+          this.turn = game.turn;
           const gameState = game.game_state_response?.data?.gameState;
-
-          if (gameState?.player1 && gameState?.player2) {
-            this.playerBoard = gameState.player1.board;
-            this.opponentBoard = gameState.player2.board;
-            this.playerPlacedShips = gameState.player1.placedShips;
-            this.opponentShips = gameState.player2.placedShips;
-            this.availableShips = gameState.player1.availableShips;
-            this.gamePhase = gameState.phase;
+           /*this.playerBoard = gameState.player1.board;
+           this.opponentBoard = gameState.player2.board;
+           this.playerPlacedShips = gameState.player1.placedShips;
+           this.opponentShips = gameState.player2.placedShips;
+           this.availableShips = gameState.player1.availableShips;
+           this.gamePhase = gameState.phase;*/
 
             if (this.gamePhase === "playing") {
               this.gameStatus =
@@ -81,9 +82,6 @@ export const useGameStore = defineStore("game", {
             } else if (this.gamePhase === "gameOver") {
               this.gameStatus = "Game Over - Winner " + gameState.winner;
             }
-          } else {
-            this.gameStatus = `Game phase: ${this.gamePhase} (incomplete data)`;
-          }
         })
         .catch((error) => {
           const message = error.response?.data?.detail || error.message;
@@ -217,8 +215,11 @@ export const useGameStore = defineStore("game", {
       if (this.availableShips.length === 0) {
         const authStore = useAuthStore(); // necessari perquè `playerId` està a l'altre store
         const gameId = await api.setGame(authStore.playerId); // només si no tens `this.gameId` guardat
+        api.setGameState("playing","player1", gameId);
+        const gameState = await this.getGameState(gameId);
+        this.gamePhase = await gameState;
 
-        await this.getGameState(gameId);
+
       }
     },
 
