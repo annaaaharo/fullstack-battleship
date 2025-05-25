@@ -63,8 +63,10 @@ class GameViewSet(viewsets.ModelViewSet):
     def update_phase(self, request, pk=None):
         game = self.get_object()
         phase = request.data.get("phase")
-        turn  = request.data.get("turn")
-        game.turn = turn
+        turn_str = request.data.get("turn")
+        
+        # Para el turn, simplemente almacenamos el string
+        game.turn = turn_str
         game.phase = phase
         game.save()
         return Response({"status": "updated"})
@@ -73,11 +75,23 @@ class GameViewSet(viewsets.ModelViewSet):
     def update_winner(self, request, pk=None):
         game = self.get_object()
         phase = request.data.get("phase")
-        winner = request.data.get("winner")
+        winner_str = request.data.get("winner")
+        
+        # Convertir el string winner a Player object
+        if winner_str == "player1":
+            # Obtener el primer jugador del juego
+            winner = game.players.first()
+        elif winner_str == "player2":
+            # Obtener el segundo jugador del juego
+            players = list(game.players.all())
+            winner = players[1] if len(players) > 1 else None
+        else:
+            winner = None
+            
         game.winner = winner
         game.phase = phase
         game.save()
-        return Response({"status": "updated"})
+        return Response({"status": "updated", "winner": winner.nickname if winner else None})
 
 
 class VesselViewSet(viewsets.ModelViewSet):

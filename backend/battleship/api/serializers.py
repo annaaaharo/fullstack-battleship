@@ -44,6 +44,8 @@ class PlayerSerializer(serializers.ModelSerializer):
 
 class GameSerializer(serializers.ModelSerializer):
     game_state_response = serializers.SerializerMethodField()
+    turn = serializers.CharField(read_only=True, allow_null=True)
+    winner = serializers.CharField(source='winner.nickname', read_only=True, allow_null=True)
 
     class Meta:
         model = Game
