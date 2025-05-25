@@ -248,7 +248,7 @@ export const useGameStore = defineStore("game", {
       this.opponentBoard[row][col] = isHit ? -this.opponentBoard[row][col] : 11;
       this.gameStatus = isHit ? "Hit!" : "Miss!";
 
-      // Verificar winner ANTES de programar el siguiente turno
+      // Verificar winner abans de programar el seguent torn
       if (this.contadorHitsPlayer === 15) {
         if (this.gameId) {
           api.setWinner("gameOver", "player1", this.gameId)
@@ -257,15 +257,13 @@ export const useGameStore = defineStore("game", {
               this.gameStatus = "Game Over - You Won!";
             });
         }
-        return; // IMPORTANTE: salir aquí para no programar el turno del oponente
+        return; 
       }
 
-      // Solo programar turno del oponente si el juego no ha terminado
       setTimeout(this.opponentTurn, 1000);
     },
 
     async opponentTurn() {
-      // No ejecutar si el juego ya terminó
       if (this.gamePhase === "gameOver") return;
       
       let row,
@@ -285,7 +283,7 @@ export const useGameStore = defineStore("game", {
       }
       this.playerBoard[row][col] = isHit ? -this.playerBoard[row][col] : 11;
       
-      // Verificar si el bot ganó
+      // Verificar si el bot ha guanyat
       if(this.contadorHitsBot === 15){
         if (this.gameId) {
           api.setWinner("gameOver","player2", this.gameId)
@@ -294,7 +292,7 @@ export const useGameStore = defineStore("game", {
               this.gameStatus = "Game Over - You Lost!";
             });
         }
-        return; // Salir aquí, no establecer "Your turn"
+        return;
       }
       
       // Solo establecer "Your turn" si el juego no ha terminado

@@ -79,5 +79,14 @@ export default {
     return axiosInstance.post(`/api/v1/shots/`, data);
     },
 
+  // Obtener partidas que están esperando jugadores
+  getAvailableGames() {
+    return axiosInstance.get(`/api/v1/games/?phase=waiting`);
+  },
+
+  // Unirse a una partida existente
+  joinGame(gameId, playerId) {
+    return axiosInstance.post(`/api/v1/games/${gameId}/join/`, { player: playerId });
+  },
 
 };
