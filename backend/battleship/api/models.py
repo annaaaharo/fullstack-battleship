@@ -19,11 +19,11 @@ class Game(models.Model):
         PHASE_GAMEOVER: "Game Over",
     }
 
-    players = models.ManyToManyField(Player, related_name="games")
+    players = models.ManyToManyField(Player, related_name="games", null=True, blank=True)
     width = models.IntegerField(validators=[MinValueValidator(5), MaxValueValidator(200)], default=10)
     height = models.IntegerField(validators=[MinValueValidator(5), MaxValueValidator(200)], default=10)
     multiplayer = models.BooleanField(default=False)
-    turn = models.ForeignKey(Player, related_name="turn", on_delete=models.SET_NULL, blank=True, null=True)
+    turn = models.CharField(max_length=20, null=True, blank=True)
     phase = models.CharField(max_length=15, choices=PHASE_CHOICES.items(), default=PHASE_WAITING)
     winner = models.ForeignKey(Player, related_name="winner", on_delete=models.SET_NULL, blank=True, null=True)
     owner = models.ForeignKey(Player, related_name="owner", on_delete=models.SET_NULL, null=True)

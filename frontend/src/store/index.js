@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import api from "../services/api";
+import {useAuthStore} from "@/store/authStore.js";
 
 export const useGameStore = defineStore("game", {
   state: () => ({
@@ -11,6 +12,9 @@ export const useGameStore = defineStore("game", {
     opponentShips: [],
     availableShips: [],
     selectedShip: null,
+    contadorHitsPlayer: 0,
+    contadorHitsBot: 0,
+    gameId: null,
   }),
 
   actions: {
@@ -26,6 +30,7 @@ export const useGameStore = defineStore("game", {
         });
     },
 
+    /*
     async getGameState(gameId) {
       return api
         .getGameState(gameId)
@@ -39,8 +44,8 @@ export const useGameStore = defineStore("game", {
           this.opponentShips = gameState.player2.placedShips;
           this.availableShips = gameState.player1.availableShips;
           this.gamePhase = gameState.phase;
-          // this.gameStatus =
-          //   gameState.turn === "player1" ? "Your turn" : "Opponent's turn";
+          this.gameStatus =
+             gameState.turn === "player1" ? "Your turn" : "Opponent's turn";
           if (this.gamePhase === "playing") {
             this.gameStatus =
               gameState.turn === "player1" ? "Your turn" : "Opponent's turn";
@@ -55,6 +60,38 @@ export const useGameStore = defineStore("game", {
           throw new Error(message);
         });
     },
+
+    */
+    async getGameState(gameId) {
+      return api
+        .getGameState(gameId)
+        .then((response) => {
+          const game = response.data;
+          this.gamePhase = game.phase;
+          this.turn = game.turn;
+          const gameState = game.game_state_response?.data?.gameState;
+           /*this.playerBoard = gameState.player1.board;
+           this.opponentBoard = gameState.player2.board;
+           this.playerPlacedShips = gameState.player1.placedShips;
+           this.opponentShips = gameState.player2.placedShips;
+           this.availableShips = gameState.player1.availableShips;
+           this.gamePhase = gameState.phase;*/
+
+            if (this.gamePhase === "playing") {
+              this.gameStatus =
+                game.turn === "player1" ? "Your turn" : "Opponent's turn";
+            } else if (this.gamePhase === "placement") {
+              this.gameStatus = "Place your ships";
+            } else if (this.gamePhase === "gameOver") {
+              this.gameStatus = "Game Over - Winner: " + (game.winner || "Unknown");
+            }
+        })
+        .catch((error) => {
+          const message = error.response?.data?.detail || error.message;
+          throw new Error(message);
+        });
+    },
+
     createEmptyBoard() {
       return Array(10)
         .fill()
@@ -72,6 +109,13 @@ export const useGameStore = defineStore("game", {
       this.availableShips = await api.getAvailableShips(); // TODO check with axios on how to avoid await.
 
       this.placeOpponentShips();
+
+    },
+    async obtainId(){
+      const idPlayer = useAuthStore().playerId;
+      const id = await api.setGame(idPlayer);
+      this.gameId = id;
+      return id;
     },
 
     placeShip(board, row, col, size, isVertical, type) {
@@ -141,44 +185,48 @@ export const useGameStore = defineStore("game", {
       }
     },
 
-    handlePlayerBoardClick(row, col) {
+    async handlePlayerBoardClick(row, col) {
       if (this.gamePhase !== "placement" || !this.selectedShip) return;
 
       const ship = this.selectedShip;
       if (
-        !this.isValidPlacement(
-          this.playerBoard,
-          row,
-          col,
-          ship.size,
-          ship.isVertical
-        )
+          !this.isValidPlacement(
+              this.playerBoard,
+              row,
+              col,
+              ship.size,
+              ship.isVertical
+          )
       )
         return;
 
       this.placeShip(
-        this.playerBoard,
-        row,
-        col,
-        ship.size,
-        ship.isVertical,
-        ship.type
+          this.playerBoard,
+          row,
+          col,
+          ship.size,
+          ship.isVertical,
+          ship.type
       );
 
-      this.playerPlacedShips.push({ ...ship, position: { row, col } });
+      this.playerPlacedShips.push({...ship, position: {row, col}});
 
       this.availableShips = this.availableShips.filter(
-        (s) => s.type !== ship.type
+          (s) => s.type !== ship.type
       );
       this.selectedShip = null;
 
       if (this.availableShips.length === 0) {
-        this.gamePhase = "playing";
-        this.gameStatus = "Your turn";
+        const authStore = useAuthStore(); // necessari perquè `playerId` està a l'altre store
+        this.gameId = await api.setGame(authStore.playerId); // guardar el gameId en el state
+        api.setGameState("playing","player1", this.gameId);
+        await this.getGameState(this.gameId);
+        console.log("PHASE: " + this.gamePhase);
+
       }
     },
 
-    handleOpponentBoardClick(row, col) {
+    async handleOpponentBoardClick(row, col) {
       if (this.gamePhase !== "playing") return;
       if (this.opponentBoard[row][col] < 0) {
         this.gameStatus = "Already hit!";
@@ -190,19 +238,42 @@ export const useGameStore = defineStore("game", {
       // const isHit = api.checkHit(row, col);
       var isHit = false;
       if (
-        this.opponentBoard[row][col] > 0 &&
-        this.opponentBoard[row][col] < 10
+          this.opponentBoard[row][col] > 0 &&
+          this.opponentBoard[row][col] < 10
       ) {
         isHit = true;
+        this.contadorHitsPlayer++;
       }
 
       this.opponentBoard[row][col] = isHit ? -this.opponentBoard[row][col] : 11;
-      this.gameStatus = isHit ? "Hit!" : "Miss!";
+      
+      // verifiquem winner abans que el bot jugui
+      if (this.contadorHitsPlayer === 15) {
+        if (this.gameId) {
+          api.setWinner("gameOver", "player1", this.gameId)
+            .then(() => {
+              this.gamePhase = "gameOver";
+              this.gameStatus = "Game Over - You Won!";
+            });
+        }
+        return;
+      }
 
+      //si es hit, el jugador pot tirar de nou
+      if (isHit) {
+        this.gameStatus = "Hit! Shoot again!";
+        return; // No pasar turno, el jugador puede seguir tirando
+      }
+      
+      // Solo si es miss, pasar el turno al oponente
+      this.gameStatus = "Miss!";
       setTimeout(this.opponentTurn, 1000);
     },
 
-    opponentTurn() {
+    async opponentTurn() {
+
+      if (this.gamePhase === "gameOver") return;
+      
       let row,
         col,
         valid = false;
@@ -215,7 +286,31 @@ export const useGameStore = defineStore("game", {
 
       const isHit =
         this.playerBoard[row][col] > 0 && this.playerBoard[row][col] < 10;
+      if(isHit){
+        this.contadorHitsBot++;
+      }
       this.playerBoard[row][col] = isHit ? -this.playerBoard[row][col] : 11;
+
+      if(this.contadorHitsBot === 15){
+        if (this.gameId) {
+          api.setWinner("gameOver","player2", this.gameId)
+            .then(() => {
+              this.gamePhase = "gameOver";
+              this.gameStatus = "Game Over - You Lost!";
+            });
+        }
+        return;
+      }
+      
+      // Si el bot fa hit, pot tornar a tirar
+      if (isHit) {
+        this.gameStatus = "Bot hit! Bot shoots again...";
+        // El bot tira de nuevo después de un breve delay
+        setTimeout(this.opponentTurn, 1500);
+        return;
+      }
+      
+      //si falla, ens toca
       this.gameStatus = "Your turn";
     },
   },

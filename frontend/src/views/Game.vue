@@ -25,11 +25,19 @@ const authStore = useAuthStore();
 //   console.log(user.value);
 // }
 
-onMounted(() => {
+onMounted(async () => {
+   if (!authStore.isAuthenticated) {
+    window.location.href = "/";
+    return;
+  }
+
   // To start a new game, uncomment the line below
-  // store.startNewGame();
+  store.startNewGame();
+  const gameId = await store.obtainId();
+
   // To fetch the game state, uncomment the line below
-  store.getGameState();
+
+  await store.getGameState(gameId);
   // getUsers();
 });
 
@@ -75,7 +83,7 @@ const onLogout = () => {
       <div v-else class="col-lg-2 d-flex flex-column justify-content-center">
         <div class="game-controls text-center">
           <div class="game-status mb-3">{{ store.gameStatus }}</div>
-          <button class="btn btn-primary" @click="store.startNewGame()">
+          <button v-if="store.gamePhase === 'waiting'" class="btn btn-primary" @click="store.startNewGame()">
             New Game
           </button>
         </div>
@@ -96,12 +104,26 @@ const onLogout = () => {
 </template>
 
 <style>
+
+
+.container-fluid {
+  background-color: #dde4f8;
+  padding: 20px;
+}
+
 .game-controls {
-  background-color: #f8f9fa;
+  background
+  : linear-gradient(135deg, #728eec 0%, #dde4f8 100%);
   border-radius: 8px;
   padding: 20px;
   margin: 20px 0;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #b037e1 0%, #e6a8e5 100%);
+  border: none;
+  color: white;
 }
 
 .game-status {

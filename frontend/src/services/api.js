@@ -1,7 +1,8 @@
 import AuthService from "@/services/auth.js";
+import axios from "axios";
 const axiosInstance = AuthService.getAxiosInstance();
 
-
+//.
 export default {
   getAvailableShips() {
     return Promise.resolve([
@@ -40,4 +41,52 @@ export default {
   getUser(id) {
     return axiosInstance.get(`/api/v1/user/${id}`);
   },
+
+  findPlayer(username) {
+  return axiosInstance.get(`/api/v1/players/?search=${username}`)
+    .then(response => response.data);
+  },
+  getAllPlayers() {
+    return AuthService.getAxiosInstance().get("/api/v1/players/");
+  },
+
+  setGame(playerId) {
+  // Exemple: crea una nova partida per un jugador
+    return axiosInstance.post("/api/v1/games/", { player: playerId })
+      .then(response => response.data.id);  // Retorna l'ID del joc creat
+  },
+
+  setGameState(phase1, turn, id){
+    return axiosInstance.post(`/api/v1/games/${id}/update_phase/`, {"phase": phase1, "turn": turn, "id": id});
+  },
+  setWinner(phase1, winner, id){
+    return axiosInstance.post(`/api/v1/games/${id}/update_winner/`, {"phase": phase1, "winner": winner, "id": id});
+  },
+
+  createGame(){
+    return axios.post("/api/v1/games/", {
+      "width": 10,
+      "height": 10,
+    });
+  },
+
+  placeShip(boardId, data) {
+    return axiosInstance.post(`/api/v1/boards/${boardId}/vessels/`, data);
+  },
+
+
+  fireShot(data) {
+    return axiosInstance.post(`/api/v1/shots/`, data);
+    },
+
+  // Obtener partidas que están esperando jugadores
+  getAvailableGames() {
+    return axiosInstance.get(`/api/v1/games/?phase=waiting`);
+  },
+
+  // Unirse a una partida existente
+  joinGame(gameId, playerId) {
+    return axiosInstance.post(`/api/v1/games/${gameId}/join/`, { player: playerId });
+  },
+
 };
