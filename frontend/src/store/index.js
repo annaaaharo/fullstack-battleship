@@ -14,6 +14,7 @@ export const useGameStore = defineStore("game", {
     selectedShip: null,
     contadorHitsPlayer: 0,
     contadorHitsBot: 0,
+    gameId: null,
   }),
 
   actions: {
@@ -78,11 +79,11 @@ export const useGameStore = defineStore("game", {
 
             if (this.gamePhase === "playing") {
               this.gameStatus =
-                gameState.turn === "player1" ? "Your turn" : "Opponent's turn";
+                game.turn === "player1" ? "Your turn" : "Opponent's turn";
             } else if (this.gamePhase === "placement") {
               this.gameStatus = "Place your ships";
             } else if (this.gamePhase === "gameOver") {
-              this.gameStatus = "Game Over - Winner " + gameState.winner;
+              this.gameStatus = "Game Over - Winner: " + (game.winner || "Unknown");
             }
         })
         .catch((error) => {
@@ -217,9 +218,9 @@ export const useGameStore = defineStore("game", {
 
       if (this.availableShips.length === 0) {
         const authStore = useAuthStore(); // necessari perquè `playerId` està a l'altre store
-        const gameId = await api.setGame(authStore.playerId); // només si no tens `this.gameId` guardat
-        api.setGameState("playing","player1", gameId);
-        await this.getGameState(gameId);
+        this.gameId = await api.setGame(authStore.playerId); // guardar el gameId en el state
+        api.setGameState("playing","player1", this.gameId);
+        await this.getGameState(this.gameId);
         console.log("PHASE: " + this.gamePhase);
 
       }
@@ -247,14 +248,24 @@ export const useGameStore = defineStore("game", {
       this.opponentBoard[row][col] = isHit ? -this.opponentBoard[row][col] : 11;
       this.gameStatus = isHit ? "Hit!" : "Miss!";
 
-      setTimeout(this.opponentTurn, 1000);
+      // Verificar winner abans de programar el seguent torn
       if (this.contadorHitsPlayer === 15) {
-        const gameId = await api.setGame(authStore.playerId); // només si no tens `this.gameId` guardat
-        api.setWinner("gameOver", "player1", gameId);
+        if (this.gameId) {
+          api.setWinner("gameOver", "player1", this.gameId)
+            .then(() => {
+              this.gamePhase = "gameOver";
+              this.gameStatus = "Game Over - You Won!";
+            });
+        }
+        return; 
       }
+
+      setTimeout(this.opponentTurn, 1000);
     },
 
     async opponentTurn() {
+      if (this.gamePhase === "gameOver") return;
+      
       let row,
         col,
         valid = false;
@@ -271,11 +282,20 @@ export const useGameStore = defineStore("game", {
         this.contadorHitsBot++;
       }
       this.playerBoard[row][col] = isHit ? -this.playerBoard[row][col] : 11;
+      
+      // Verificar si el bot ha guanyat
       if(this.contadorHitsBot === 15){
-        const gameId = await api.setGame(authStore.playerId); // només si no tens `this.gameId` guardat
-        api.setWinner("gameOver","player2", gameId);
-        //winner
+        if (this.gameId) {
+          api.setWinner("gameOver","player2", this.gameId)
+            .then(() => {
+              this.gamePhase = "gameOver";
+              this.gameStatus = "Game Over - You Lost!";
+            });
+        }
+        return;
       }
+      
+      // Solo establecer "Your turn" si el juego no ha terminado
       this.gameStatus = "Your turn";
     },
   },

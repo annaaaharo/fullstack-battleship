@@ -51,8 +51,16 @@ class GameViewSet(viewsets.ModelViewSet):
         return context
 
     def perform_create(self, serializer):
-        player = get_object_or_404(models.Player, user=User.objects.first())
-        serializer.save(owner=player)
+        # Obtener el player del request data o usar el primer player como fallback
+        player_id = self.request.data.get('player')
+        if player_id:
+            player = get_object_or_404(models.Player, id=player_id)
+        else:
+            player = get_object_or_404(models.Player, user=User.objects.first())
+        
+        game = serializer.save(owner=player)
+        # Añadir al creador como primer jugador
+        game.players.add(player)
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -63,8 +71,10 @@ class GameViewSet(viewsets.ModelViewSet):
     def update_phase(self, request, pk=None):
         game = self.get_object()
         phase = request.data.get("phase")
-        turn  = request.data.get("turn")
-        game.turn = turn
+        turn_str = request.data.get("turn")
+        
+        # Para el turn, simplemente almacenamos el string
+        game.turn = turn_str
         game.phase = phase
         game.save()
         return Response({"status": "updated"})
@@ -73,11 +83,64 @@ class GameViewSet(viewsets.ModelViewSet):
     def update_winner(self, request, pk=None):
         game = self.get_object()
         phase = request.data.get("phase")
-        winner = request.data.get("winner")
+        winner_str = request.data.get("winner")
+        
+        # Convertir el string winner a Player object
+        if winner_str == "player1":
+            # Obtener el primer jugador del juego
+            winner = game.players.first()
+        elif winner_str == "player2":
+            # Obtener el segundo jugador del juego
+            players = list(game.players.all())
+            winner = players[1] if len(players) > 1 else None
+        else:
+            winner = None
+            
         game.winner = winner
         game.phase = phase
         game.save()
-        return Response({"status": "updated"})
+        return Response({"status": "updated", "winner": winner.nickname if winner else None})
+
+    @action(detail=True, methods=["post"])
+    def join(self, request, pk=None):
+        game = self.get_object()
+        player_id = request.data.get("player")
+        
+        try:
+            player = get_object_or_404(Player, id=player_id)
+        except:
+            return Response({"error": "Player not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Verificar que el juego esté en fase waiting
+        if game.phase != "waiting":
+            return Response({"error": "Game is not waiting for players"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Verificar que el jugador no esté ya en el juego
+        if game.players.filter(id=player.id).exists():
+            return Response({"error": "Player already in this game"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Verificar que no haya más de 2 jugadores
+        if game.players.count() >= 2:
+            return Response({"error": "Game is full"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Añadir el jugador al juego
+        game.players.add(player)
+        
+        # Si ahora hay 2 jugadores, cambiar a fase placement
+        if game.players.count() == 2:
+            game.phase = "placement"
+            game.save()
+            
+            # Crear tableros para ambos jugadores
+            for game_player in game.players.all():
+                Board.objects.get_or_create(game=game, player=game_player)
+        
+        return Response({
+            "status": "joined", 
+            "game_id": game.id, 
+            "players_count": game.players.count(),
+            "phase": game.phase
+        })
 
 
 class VesselViewSet(viewsets.ModelViewSet):

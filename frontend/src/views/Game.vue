@@ -104,12 +104,26 @@ const onLogout = () => {
 </template>
 
 <style>
+
+
+.container-fluid {
+  background-color: #dde4f8;
+  padding: 20px;
+}
+
 .game-controls {
-  background-color: #f8f9fa;
+  background
+  : linear-gradient(135deg, #728eec 0%, #dde4f8 100%);
   border-radius: 8px;
   padding: 20px;
   margin: 20px 0;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #b037e1 0%, #e6a8e5 100%);
+  border: none;
+  color: white;
 }
 
 .game-status {

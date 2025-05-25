@@ -17,7 +17,7 @@ onMounted(async () => {
 
 
 const startGame = () => {
-  window.location.href = "/game";
+  window.location.href = "/lobby";
 };
 
 const authenticateUser = () => {
@@ -96,7 +96,7 @@ const logOut = () => {
         Access Token: {{ authStore.accessToken.slice(0, 20) }}...
       </div>
       <button class="btn btn-primary mr-2" @click="startGame">
-        Start New Game
+        Ver Partidas Disponibles
       </button>
       <button class="btn btn-secondary" @click="logOut">Log Out</button>
     </div>
@@ -177,5 +177,10 @@ const logOut = () => {
 .home {
   max-width: 600px;
   margin: 0 auto;
+}
+
+.btn-success {
+  background: linear-gradient( 135deg, #b037e1 0%, #e6a8e5 100%);
+  border-color: #2a0145;
 }
 </style>
