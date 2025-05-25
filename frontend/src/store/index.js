@@ -246,9 +246,8 @@ export const useGameStore = defineStore("game", {
       }
 
       this.opponentBoard[row][col] = isHit ? -this.opponentBoard[row][col] : 11;
-      this.gameStatus = isHit ? "Hit!" : "Miss!";
-
-      // Verificar winner abans de programar el seguent torn
+      
+      // verifiquem winner abans que el bot jugui
       if (this.contadorHitsPlayer === 15) {
         if (this.gameId) {
           api.setWinner("gameOver", "player1", this.gameId)
@@ -257,13 +256,22 @@ export const useGameStore = defineStore("game", {
               this.gameStatus = "Game Over - You Won!";
             });
         }
-        return; 
+        return;
       }
 
+      //si es hit, el jugador pot tirar de nou
+      if (isHit) {
+        this.gameStatus = "Hit! Shoot again!";
+        return; // No pasar turno, el jugador puede seguir tirando
+      }
+      
+      // Solo si es miss, pasar el turno al oponente
+      this.gameStatus = "Miss!";
       setTimeout(this.opponentTurn, 1000);
     },
 
     async opponentTurn() {
+
       if (this.gamePhase === "gameOver") return;
       
       let row,
@@ -282,8 +290,7 @@ export const useGameStore = defineStore("game", {
         this.contadorHitsBot++;
       }
       this.playerBoard[row][col] = isHit ? -this.playerBoard[row][col] : 11;
-      
-      // Verificar si el bot ha guanyat
+
       if(this.contadorHitsBot === 15){
         if (this.gameId) {
           api.setWinner("gameOver","player2", this.gameId)
@@ -295,7 +302,15 @@ export const useGameStore = defineStore("game", {
         return;
       }
       
-      // Solo establecer "Your turn" si el juego no ha terminado
+      // Si el bot fa hit, pot tornar a tirar
+      if (isHit) {
+        this.gameStatus = "Bot hit! Bot shoots again...";
+        // El bot tira de nuevo después de un breve delay
+        setTimeout(this.opponentTurn, 1500);
+        return;
+      }
+      
+      //si falla, ens toca
       this.gameStatus = "Your turn";
     },
   },
