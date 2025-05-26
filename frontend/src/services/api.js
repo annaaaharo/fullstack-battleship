@@ -89,4 +89,19 @@ export default {
     return axiosInstance.post(`/api/v1/games/${gameId}/join/`, { player: playerId });
   },
 
+  //eliminar una partida específica
+  deleteGame(gameId, playerId) {
+    return axiosInstance.delete(`/api/v1/games/${gameId}/delete_game/?player_id=${playerId}`);
+  },
+
+  //eliminar totes les partides del jugador
+  clearMyGames(playerId) {
+    return axiosInstance.post(`/api/v1/games/clear_all_games/`, { player_id: playerId });
+  },
+
+  //obtenim les partides del jugador
+  getMyGames(playerId) {
+    return axiosInstance.get(`/api/v1/games/my_games/?player_id=${playerId}`);
+  },
+
 };

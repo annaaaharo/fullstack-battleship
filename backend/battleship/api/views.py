@@ -143,6 +143,68 @@ class GameViewSet(viewsets.ModelViewSet):
             "phase": game.phase
         })
 
+    @action(detail=True, methods=["delete"])
+    def delete_game(self, request, pk=None):
+        #eliminem una partida específica
+        game = self.get_object()
+        player_id = request.data.get("player_id") or request.query_params.get("player_id")
+        
+        if not player_id:
+            return Response({"error": "player_id required"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            player = get_object_or_404(Player, id=player_id)
+            #verificar que el jugador és el propietari de la partida
+            if game.owner != player:
+                return Response({"error": "You can only delete your own games"}, status=status.HTTP_403_FORBIDDEN)
+            
+            game_id = game.id
+            game.delete()
+            return Response({
+                "status": "success", 
+                "message": f"Partida {game_id} eliminada correctament"
+            })
+        except:
+            return Response({"error": "Player not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    @action(detail=False, methods=["post"])
+    def clear_all_games(self, request):
+        #eliminem les partides del jugador
+        player_id = request.data.get("player_id")
+        
+        if player_id:
+            #només eliminem les partides del jugador
+            try:
+                player = get_object_or_404(Player, id=player_id)
+                games_count = Game.objects.filter(owner=player).count()
+                Game.objects.filter(owner=player).delete()
+                return Response({
+                    "status": "success", 
+                    "message": f"Eliminadas {games_count} partidas del jugador {player.nickname}"
+                })
+            except:
+                return Response({"error": "Player not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+            
+
+    @action(detail=False, methods=["get"])
+    def my_games(self, request):
+        #obtem les partides del jugador
+        player_id = request.query_params.get("player_id")
+        if not player_id:
+            return Response({"error": "player_id required"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            player = get_object_or_404(Player, id=player_id)
+            games = Game.objects.filter(owner=player)
+            serializer = self.get_serializer(games, many=True)
+            return Response({
+                "count": games.count(),
+                "games": serializer.data
+            })
+        except:
+            return Response({"error": "Player not found"}, status=status.HTTP_404_NOT_FOUND)
+
 
 class VesselViewSet(viewsets.ModelViewSet):
     queryset = Vessel.objects.all()
