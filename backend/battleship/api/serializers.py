@@ -95,7 +95,7 @@ class GameStateResponseSerializer(serializers.Serializer):
             try:
                 board1 = Board.objects.get(game=obj, player=current_player)
                 player1_data = PlayerStateSerializer(board1).data
-                board2 = obj.board_set.exclude(player=current_player).first()
+                board2 = obj.boards.exclude(player=current_player).first()
                 if board2:
                     player2_data = PlayerStateSerializer(board2).data
             except Board.DoesNotExist:
@@ -147,8 +147,8 @@ class GameStateSerializer(serializers.Serializer):
         return PlayerStateSerializer(board).data if board else None
 
 class PlayerStateSerializer(serializers.Serializer):
-    id = serializers.CharField(source='owner.id')
-    username = serializers.CharField(source='owner.nickname')
+    id = serializers.CharField(source='player.id')
+    username = serializers.CharField(source='player.nickname')
     placedShips = serializers.SerializerMethodField()
     availableShips = serializers.SerializerMethodField()
     board = serializers.SerializerMethodField()

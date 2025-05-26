@@ -24,10 +24,12 @@ const loadAvailableGames = async () => {
     const response = await api.getAvailableGames();
     const allGames = response.data.results || response.data;
     //filtrem per partides que esperen usuaris
-    availableGames.value = allGames.filter(game => 
-      game.phase === 'waiting' && 
+    console.log("Totes les partides:", allGames);
+    availableGames.value = allGames.filter(game =>
+      (game.phase === 'waiting' || game.phase === 'placement') &&
       (!game.players || game.players.length < 2)
     );
+
   } catch (err) {
     error.value = "Error al carregar les partidas disponibles";
     console.error(err);

@@ -42,6 +42,7 @@ class GameViewSet(viewsets.ModelViewSet):
     serializer_class = GameSerializer
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['phase']
+    filterset_fields = ['phase']
     ordering_fields = ['id']
     permission_classes = [AllowAny]
 
