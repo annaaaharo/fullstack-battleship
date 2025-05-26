@@ -217,12 +217,17 @@ export const useGameStore = defineStore("game", {
       this.selectedShip = null;
 
       if (this.availableShips.length === 0) {
-        const authStore = useAuthStore(); // necessari perquè `playerId` està a l'altre store
-        this.gameId = await api.setGame(authStore.playerId); // guardar el gameId en el state
+        // Si no tenim gameId, vol dir que hem entrat directament al joc
+        // En aquest cas, creem una nova partida
+        if (!this.gameId) {
+          const authStore = useAuthStore();
+          this.gameId = await api.setGame(authStore.playerId);
+        }
+        
+        // Actualitzar l'estat de la partida existent
         api.setGameState("playing","player1", this.gameId);
         await this.getGameState(this.gameId);
         console.log("PHASE: " + this.gamePhase);
-
       }
     },
 
