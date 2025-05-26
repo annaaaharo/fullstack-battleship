@@ -8,34 +8,18 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'password']
+        fields = ["username", "email", "password"]
 
     def create(self, validated_data):
         user = User.objects.create_user(
-            username=validated_data['username'],
-            email=validated_data['email'],
-            password=validated_data['password']
+            username=validated_data["username"],
+            email=validated_data.get("email"),
+            password=validated_data["password"]
         )
+        user.is_active = True  # Important perquè funcioni amb /api/token/
+        user.save()
         return user
 
-class UserSerializer(serializers.ModelSerializer):
-
-    password = serializers.CharField(write_only=True)
-
-    class Meta:
-        model = User
-        fields = ("username", "email", "password")
-        # exclude = ('password',)
-
-        def create(self, validated_data):
-            user = User.objects.create_user(
-                username=validated_data["username"],
-                email=validated_data.get("email"),
-                password=validated_data["password"]
-            )
-            user.is_active = True
-            user.save()
-            return user
 
 class PlayerSerializer(serializers.ModelSerializer):
     class Meta:
@@ -96,21 +80,43 @@ class GameStateResponseSerializer(serializers.Serializer):
     data = serializers.SerializerMethodField()
 
     def get_data(self, obj):
+        request = self.context.get("request")
+        current_player = None
+        if request and request.user.is_authenticated:
+            try:
+                current_player = request.user.player
+            except AttributeError:
+                pass  # L'usuari autenticat no té un Player associat
+
+        player1_data = None
+        player2_data = None
+
+        if current_player:
+            try:
+                board1 = Board.objects.get(game=obj, player=current_player)
+                player1_data = PlayerStateSerializer(board1).data
+                board2 = obj.board_set.exclude(player=current_player).first()
+                if board2:
+                    player2_data = PlayerStateSerializer(board2).data
+            except Board.DoesNotExist:
+                pass
+
         return {
             "gameState": {
                 "gameId": str(obj.id),
                 "phase": obj.phase,
                 "turn": obj.turn,
-                "winner": obj.winner,
-                "player1": None,
-                "player2": None
+                "winner": obj.winner.nickname if obj.winner else None,
+                "player1": player1_data,
+                "player2": player2_data
             }
         }
+
 
 class GameStateSerializer(serializers.Serializer):
     gameId = serializers.CharField(source='id')
     phase = serializers.CharField()
-    turn = serializers.CharField(source='turn.nickname', allow_null=True)
+    turn = serializers.CharField(allow_null=True)
     winner = serializers.CharField(source='winner.nickname', allow_null=True)
     player1 = serializers.SerializerMethodField()
     player2 = serializers.SerializerMethodField()
@@ -119,18 +125,26 @@ class GameStateSerializer(serializers.Serializer):
         request = self.context.get('request')
         if not request:
             return None
-        current_player = request.user.player
-        board = Board.objects.get(game=obj, owner=current_player)
-        return PlayerStateSerializer(board).data
+        try:
+            current_player = request.user.player
+        except AttributeError:
+            return None
+        try:
+            board = Board.objects.get(game=obj, player=current_player)  # Canvia 'owner' per 'player'
+            return PlayerStateSerializer(board).data
+        except Board.DoesNotExist:
+            return None
 
     def get_player2(self, obj):
         request = self.context.get('request')
         if not request:
             return None
-        current_player = request.user.player
-        board = obj.board_set.exclude(owner=current_player).first()
+        try:
+            current_player = request.user.player
+        except AttributeError:
+            return None
+        board = obj.board_set.exclude(player=current_player).first()  # Canvia 'owner' per 'player'
         return PlayerStateSerializer(board).data if board else None
-
 
 class PlayerStateSerializer(serializers.Serializer):
     id = serializers.CharField(source='owner.id')

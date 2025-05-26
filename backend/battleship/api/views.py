@@ -99,6 +99,7 @@ class GameViewSet(viewsets.ModelViewSet):
         game.winner = winner
         game.phase = phase
         game.save()
+        #return Response({"status": "updated", "winner": winner.nickname if winner else None})
         return Response({"status": "updated", "winner": winner.nickname if winner else None})
 
     @action(detail=True, methods=["post"])
@@ -175,13 +176,11 @@ class BoardVesselViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         board_vessel = serializer.save()
         game = board_vessel.board.game
-        print("➡️ Vessel placed. Game:", game.id)
 
         boards = game.board_set.all()
         print("🔎 Number of boards:", boards.count())
         if boards.count() == 2:
             if all(all_vessels_placed(board) for board in boards):
-                print("✅ All vessels placed. Changing phase to 'playing'.")
                 game.phase = "playing"
                 game.turn = boards.first().owner  # o el jugador que vulguis
                 game.save()
