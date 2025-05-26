@@ -414,13 +414,15 @@ const clearMyGames = async () => {
 }
 
 .btn-success {
-  background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
+  background: linear-gradient(135deg, #d21bc0 0%, #b037e1 100%);
   border: none;
 }
 
 .btn-success:hover {
-  background: linear-gradient(135deg, #4e9c27 0%, #98d6bf 100%);
+  background: linear-gradient(135deg, #d21bc0 0%, #b037e1 100%);
+  transform: translateY(-1px);
 }
+
 
 .btn-danger {
   background: linear-gradient(135deg, #e74c3c 0%, #d21bc0 100%);
