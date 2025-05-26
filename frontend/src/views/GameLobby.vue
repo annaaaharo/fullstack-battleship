@@ -61,6 +61,9 @@ const toggleMyGames = async () => {
 };
 
 const createNewGame = async () => {
+  //per a que no es dupliqui
+  if (loading.value) return;
+  
   try {
     loading.value = true;
     const gameId = await api.setGame(authStore.playerId);
@@ -75,6 +78,8 @@ const createNewGame = async () => {
 };
 
 const joinGame = async (gameId) => {
+  if (loading.value) return;
+  
   try {
     loading.value = true;
     await api.joinGame(gameId, authStore.playerId);
@@ -179,13 +184,7 @@ const clearMyGames = async () => {
                 >
                   {{ showMyGames ? 'Ocultar' : 'Veure' }} Les meves partides:
                 </button>
-                <button 
-                  class="btn btn-warning" 
-                  @click="clearMyGames"
-                  :disabled="loading"
-                >
-                  Eliminar les meves partides
-                </button>
+
               </div>
 
               <!-- Error message -->
@@ -403,7 +402,7 @@ const clearMyGames = async () => {
 }
 
 .card.border-warning {
-  border: 2px solid #ffc107 !important;
+  border: 2px solid #d21bc0 !important;
 }
 
 .card.border-warning:hover {
@@ -421,22 +420,13 @@ const clearMyGames = async () => {
   background: linear-gradient(135deg, #4e9c27 0%, #98d6bf 100%);
 }
 
-.btn-warning {
-  background: linear-gradient(135deg, #f7931e 0%, #ffd200 100%);
-  border: none;
-}
-
-.btn-warning:hover {
-  background: linear-gradient(135deg, #e8870c 0%, #f0c600 100%);
-}
-
 .btn-danger {
-  background: linear-gradient(135deg, #e74c3c 0%, #f39c12 100%);
+  background: linear-gradient(135deg, #e74c3c 0%, #d21bc0 100%);
   border: none;
 }
 
 .btn-danger:hover {
-  background: linear-gradient(135deg, #c0392b 0%, #e67e22 100%);
+  background: linear-gradient(135deg, #c0392b 0%, #b037e1 100%);
 }
 
 .btn-info {
