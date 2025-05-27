@@ -28,7 +28,7 @@ const loadAvailableGames = async () => {
     //filtrem per partides que esperen usuaris
     console.log("Totes les partides:", allGames);
     availableGames.value = allGames.filter(game =>
-      (game.phase === 'waiting' || game.phase === 'placement') &&
+      (game.phase === 'waiting') &&
       (!game.players || game.players.length < 2)
     );
 
