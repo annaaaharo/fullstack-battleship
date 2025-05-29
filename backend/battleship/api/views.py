@@ -224,8 +224,27 @@ class BoardViewSet(viewsets.ModelViewSet):
         serializer.save(player=player, game=game)
 
 def all_vessels_placed(board):
-    total_vessels = Vessel.objects.count()
-    return BoardVessel.objects.filter(board=board).count() == total_vessels
+    # Cada jugador ha de col·locar exactament 5 vaixells (1 de cada tipus)
+    return BoardVessel.objects.filter(board=board).count() == 5
+
+def ensure_default_vessels():
+    """Crear vaixells per defecte si no existeixen"""
+    vessels_data = [
+        {"id": 1, "size": 1, "name": "Submarino"},
+        {"id": 2, "size": 2, "name": "Destructor"},
+        {"id": 3, "size": 3, "name": "Crucero"},
+        {"id": 4, "size": 4, "name": "Acorazado"},
+        {"id": 5, "size": 5, "name": "Portaaviones"},
+    ]
+    
+    for vessel_data in vessels_data:
+        Vessel.objects.get_or_create(
+            id=vessel_data["id"],
+            defaults={
+                "size": vessel_data["size"],
+                "name": vessel_data["name"]
+            }
+        )
 
 class BoardVesselViewSet(viewsets.ModelViewSet):
     queryset = BoardVessel.objects.all()
@@ -234,15 +253,32 @@ class BoardVesselViewSet(viewsets.ModelViewSet):
     search_fields = ['vessel__name']
 
     def perform_create(self, serializer):
-        board_vessel = serializer.save()
+        # Assegurar que els vaixells per defecte existeixen
+        ensure_default_vessels()
+        
+        # Obtenir dades del frontend
+        board = get_object_or_404(Board, id=self.request.data.get('board'))
+        vessel = get_object_or_404(Vessel, id=self.request.data.get('vessel'))
+        
+        board_vessel = serializer.save(board=board, vessel=vessel)
         game = board_vessel.board.game
 
-        boards = game.board_set.all()
-        if boards.count() == 2:
-            if all(all_vessels_placed(board) for board in boards):
+        # Comprovar si aquest jugador ha col·locat tots els seus vaixells
+        if all_vessels_placed(board):
+            # Si és un joc d'un sol jugador, passar directament a playing
+            if game.players.count() == 1:
                 game.phase = "playing"
-                game.turn = boards.first().owner  # o el jugador que vulguis
+                game.turn = board.player.nickname
                 game.save()
+                print(f"Joc d'un jugador - canviant a phase: playing")
+            else:
+                # Si és multijugador, comprovar si tots els jugadors han acabat
+                boards = game.boards.all()
+                if all(all_vessels_placed(game_board) for game_board in boards):
+                    game.phase = "playing"
+                    game.turn = boards.first().player.nickname
+                    game.save()
+                    print(f"Tots els jugadors han col·locat vaixells - canviant a phase: playing")
 
 class ShotViewSet(viewsets.ModelViewSet):
     queryset = Shot.objects.all()
@@ -252,7 +288,8 @@ class ShotViewSet(viewsets.ModelViewSet):
     ordering_fields = ['id']
 
     def perform_create(self, serializer):
-        player = get_object_or_404(models.Player, user=User.objects.first())
+        # Obtenir dades del frontend en lloc de hardcodear
+        player = get_object_or_404(models.Player, id=self.request.data.get('player'))
         game = get_object_or_404(Game, id=self.request.data.get('game'))
         board = get_object_or_404(Board, id=self.request.data.get('board'))
         serializer.save(player=player, game=game, board=board)

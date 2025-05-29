@@ -15,6 +15,8 @@ export const useGameStore = defineStore("game", {
     contadorHitsPlayer: 0,
     contadorHitsBot: 0,
     gameId: null,
+    playerBoardId: null, // ID del board del jugador al backend
+    opponentBoardId: null, // ID del board de l'oponent al backend
   }),
 
   actions: {
@@ -211,21 +213,46 @@ export const useGameStore = defineStore("game", {
 
       this.playerPlacedShips.push({...ship, position: {row, col}});
 
+      // Si no tenim gameId, vol dir que hem entrat directament al joc
+      // En aquest cas, creem una nova partida
+      if (!this.gameId) {
+        const authStore = useAuthStore();
+        this.gameId = await api.setGame(authStore.playerId);
+      }
+
+      // Obtenir o crear el board del jugador
+      if (!this.playerBoardId) {
+        const authStore = useAuthStore();
+        const board = await api.getOrCreateBoard(this.gameId, authStore.playerId);
+        this.playerBoardId = board.id;
+      }
+
+      // Enviar el vaixell al backend
+      try {
+        const authStore = useAuthStore();
+        const vesselData = {
+          board: this.playerBoardId,
+          vessel: ship.type, // L'ID del vessel al backend
+          ri: row,
+          ci: ship.isVertical ? col : col - ship.size + 1,
+          rf: ship.isVertical ? row + ship.size - 1 : row,
+          cf: col,
+          alive: true
+        };
+        
+        await api.placeShip(vesselData);
+        console.log('Vaixell enviat al backend:', vesselData);
+      } catch (error) {
+        console.error('Error enviant vaixell al backend:', error);
+      }
+
       this.availableShips = this.availableShips.filter(
           (s) => s.type !== ship.type
       );
       this.selectedShip = null;
 
       if (this.availableShips.length === 0) {
-        // Si no tenim gameId, vol dir que hem entrat directament al joc
-        // En aquest cas, creem una nova partida
-        if (!this.gameId) {
-          const authStore = useAuthStore();
-          this.gameId = await api.setGame(authStore.playerId);
-        }
-        
-        // Actualitzar l'estat de la partida existent
-        api.setGameState("playing","player1", this.gameId);
+        // El backend canviarà automàticament la fase quan detecti que tots els vaixells estan col·locats
         await this.getGameState(this.gameId);
         console.log("PHASE: " + this.gamePhase);
       }
@@ -240,6 +267,24 @@ export const useGameStore = defineStore("game", {
         this.gameStatus = "Already missed!";
         return;
       }
+
+      // Obtenir el board de l'oponent si no el tenim
+      if (!this.opponentBoardId) {
+        try {
+          const authStore = useAuthStore();
+          const boardsResponse = await api.getGameBoards(this.gameId);
+          const boards = boardsResponse.data.results || boardsResponse.data;
+          
+          // Trobar el board que no és del jugador actual
+          const opponentBoard = boards.find(board => board.player !== authStore.playerId);
+          if (opponentBoard) {
+            this.opponentBoardId = opponentBoard.id;
+          }
+        } catch (error) {
+          console.error('Error obtenint board de l\'oponent:', error);
+        }
+      }
+
       // const isHit = api.checkHit(row, col);
       var isHit = false;
       if (
@@ -251,6 +296,24 @@ export const useGameStore = defineStore("game", {
       }
 
       this.opponentBoard[row][col] = isHit ? -this.opponentBoard[row][col] : 11;
+
+      // Enviar el tir al backend
+      try {
+        const authStore = useAuthStore();
+        const shotData = {
+          game: this.gameId,
+          player: authStore.playerId,
+          board: this.opponentBoardId, // Board de l'oponent on estem tirant
+          row: row,
+          col: col,
+          result: isHit ? 1 : 0 // 0=Water, 1=Hit, 2=Sunk
+        };
+        
+        await api.fireShot(shotData);
+        console.log('Tir enviat al backend:', shotData);
+      } catch (error) {
+        console.error('Error enviant tir al backend:', error);
+      }
       
       // verifiquem winner abans que el bot jugui
       if (this.contadorHitsPlayer === 15) {

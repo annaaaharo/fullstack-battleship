@@ -160,13 +160,13 @@ class PlayerStateSerializer(serializers.Serializer):
         ships = []
         for vessel in BoardVessel.objects.filter(board=board):
             ships.append({
-                'type': vessel.type.id,
+                'type': vessel.vessel.id,
                 'position': {
                     'row': vessel.ri,
                     'col': vessel.ci
                 },
                 'isVertical': vessel.rf != vessel.ri,
-                'size': vessel.type.size
+                'size': vessel.vessel.size
             })
         return ships
 
@@ -176,7 +176,7 @@ class PlayerStateSerializer(serializers.Serializer):
         ships = []
 
         for vessel in all_vessels:
-            if not placed_vessels.filter(type=vessel).exists():
+            if not placed_vessels.filter(vessel=vessel).exists():
                 ships.append({
                     'type': vessel.id,
                     'isVertical': True,
@@ -190,7 +190,7 @@ class PlayerStateSerializer(serializers.Serializer):
 
         # Afegeix els vaixells
         for vessel in BoardVessel.objects.filter(board=board):
-            value = vessel.type.id if vessel.alive else -vessel.type.id
+            value = vessel.vessel.id if vessel.alive else -vessel.vessel.id
             for i in range(min(vessel.ri, vessel.rf), max(vessel.ri, vessel.rf) + 1):
                 for j in range(min(vessel.ci, vessel.cf), max(vessel.ci, vessel.cf) + 1):
                     grid[i][j] = value

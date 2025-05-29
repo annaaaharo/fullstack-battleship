@@ -62,6 +62,32 @@ export default {
     return axiosInstance.post(`/api/v1/games/${id}/update_winner/`, {"phase": phase1, "winner": winner, "id": id});
   },
 
+  // Obtenir o crear el board d'un jugador per a una partida
+  getOrCreateBoard(gameId, playerId) {
+    return axiosInstance.get(`/api/v1/boards/?game=${gameId}&player=${playerId}`)
+      .then(response => {
+        if (response.data.results && response.data.results.length > 0) {
+          return response.data.results[0];
+        } else {
+          // Crear nou board si no existeix
+          return axiosInstance.post(`/api/v1/boards/`, {
+            game: gameId,
+            player: playerId
+          }).then(response => response.data);
+        }
+      });
+  },
+
+  // Obtenir board d'un jugador
+  getBoard(gameId, playerId) {
+    return axiosInstance.get(`/api/v1/boards/?game=${gameId}&player=${playerId}`);
+  },
+
+  // Obtenir tots els boards d'una partida
+  getGameBoards(gameId) {
+    return axiosInstance.get(`/api/v1/boards/?game=${gameId}`);
+  },
+
   createGame(){
     return axios.post("/api/v1/games/", {
       "width": 10,
@@ -69,11 +95,12 @@ export default {
     });
   },
 
-  placeShip(boardId, data) {
-    return axiosInstance.post(`/api/v1/boards/${boardId}/vessels/`, data);
+  // Col·locar vaixell (corregir endpoint)
+  placeShip(data) {
+    return axiosInstance.post(`/api/v1/boardvessels/`, data);
   },
 
-
+  // Disparar tir
   fireShot(data) {
     return axiosInstance.post(`/api/v1/shots/`, data);
     },
