@@ -71,17 +71,20 @@
   - [] ...
     - [] ...
     - [] ...
-  -Observacions: Els hi deixa col.locar els vaixells pero no els tenen inicialitzats de manera no hardcodejada. Els falta implementar el backend. Per aquest motiu la resta de funcionalitats no poden ser testejades (com els shots i demés).
+
+Observacions: Tot i que l’aplicació permet col·locar vaixells al tauler, aquesta funcionalitat està limitada per una inicialització rígida i no flexible. És a dir, els vaixells no es creen dinàmicament ni es gestionen correctament al backend, sinó que estan hardcodejats. Això provoca que l’estat real de la partida no es pugui gestionar ni consultar de manera fiable mitjançant l’API.
+
+A causa d’aquesta limitació en la lògica del servidor (backend), no es pot continuar amb la resta del flux del joc, ja que:
+
+No es poden disparar trets (shots) de forma funcional, ja que no hi ha persistència ni control sobre la posició real dels vaixells. No es pot determinar si un tret és un encert o un fall, perquè no hi ha un model de l’estat del tauler que permeti fer aquestes comprovacions. No es pot determinar si la partida ha de finalitzar, perquè no es pot saber si s’han enfonsat tots els vaixells d’un jugador. El joc contra bot no pot ser testejat perquè no hi ha cap lògica implementada per generar ni controlar moviments del bot.
+
+La funcionalitat de multijugador tampoc està desenvolupada ni disponible per test.
+
+Per tant, encara que la part inicial de la creació del joc i la col·locació visual dels vaixells funcioni mínimament, la manca d’una estructura backend sòlida impedeix validar les funcionalitats principals del joc (com la mecànica de tir, la detecció de victòria o derrota, i el joc multijugador). Cal completar la implementació del backend abans de poder avançar amb les proves completes del joc.
 
 ### Case C checklist
 
 - Summarize the interview
-
-## Group Information
-
-- Your group and team members:
-  - Group: [C03]
-  - Team members: [Èlia Garcia, Anna Haro]
 
 ## Tested Group Information
 
@@ -142,12 +145,17 @@
   - [] ...
     - [] ...
     - [] ...
-  -Observacions: Els hi deixa col.locar els vaixells pero no els tenen inicialitzats de manera no hardcodejada. Els falta implementar el backend. Per aquest motiu la resta de funcionalitats no poden ser testejades (com els shots i demés).
+
+Observacions: Tot i que l’aplicació permet la col·locació de vaixells al tauler, aquesta funcionalitat està limitada per una inicialització no dinàmica: els vaixells estan hardcodejats i no es generen correctament ni des del client ni des del backend. Això indica que encara no hi ha una estructura de dades adequada per gestionar el posicionament i l’estat dels vaixells per jugador dins de la partida.
+
+No es pot obtenir un token JWT, per tant no hi ha autenticació funcional. Això bloqueja completament qualsevol accés a rutes protegides com la creació de jugadors, col·locació de vaixells via API, o execució de jugades. No hi ha registre d’usuaris habilitat, fet que complica encara més les proves de fluxos reals d’usuari. No es pot verificar l'autenticació sobre l'API de Users, perquè el sistema d'autenticació no està actiu.
+
+Pel que fa al gameplay, només s’ha pogut verificar parcialment la col·locació de vaixells, però com que no estan correctament inicialitzats ni controlats per la lògica del servidor, això no té cap impacte real sobre l’estat del joc.
+
+Per aquest motiu, no es poden fer proves funcionals sobre la mecànica de trets, els encerts o errors, la detecció de final de partida o la interacció amb un bot. Tota aquesta lògica depèn d’un backend actiu amb models i rutes ben definides, que en aquest cas encara no estan implementades.
+
+En resum, encara que s’ha pogut crear una partida i visualment col·locar vaixells, el projecte no compta amb una arquitectura backend funcional, i això impedeix avançar amb qualsevol prova significativa del joc. És necessari completar primer la part d’autenticació i lògica del joc al backend per tal de continuar amb el desenvolupament i les validacions.
 
 ### Case C checklist
 
 - Summarize the interview
-
-### Test group 2
-
-Backend va crear joc i posar vaixells.
