@@ -51,7 +51,6 @@ export default {
   },
 
   setGame(playerId) {
-  // Exemple: crea una nova partida per un jugador
     return axiosInstance.post("/api/v1/games/", { player: playerId })
       .then(response => response.data.id);  // Retorna l'ID del joc creat
   },

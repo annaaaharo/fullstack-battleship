@@ -52,7 +52,6 @@ class GameViewSet(viewsets.ModelViewSet):
         return context
 
     def perform_create(self, serializer):
-        # Obtener el player del request data o usar el primer player como fallback
         player_id = self.request.data.get('player')
         if player_id:
             player = get_object_or_404(models.Player, id=player_id)
@@ -60,7 +59,6 @@ class GameViewSet(viewsets.ModelViewSet):
             player = get_object_or_404(models.Player, user=User.objects.first())
         
         game = serializer.save(owner=player)
-        # Añadir al creador como primer jugador
         game.players.add(player)
 
     def retrieve(self, request, *args, **kwargs):
@@ -100,7 +98,6 @@ class GameViewSet(viewsets.ModelViewSet):
         game.winner = winner
         game.phase = phase
         game.save()
-        #return Response({"status": "updated", "winner": winner.nickname if winner else None})
         return Response({"status": "updated", "winner": winner.nickname if winner else None})
 
     @action(detail=True, methods=["post"])
@@ -241,7 +238,6 @@ class BoardVesselViewSet(viewsets.ModelViewSet):
         game = board_vessel.board.game
 
         boards = game.board_set.all()
-        print("🔎 Number of boards:", boards.count())
         if boards.count() == 2:
             if all(all_vessels_placed(board) for board in boards):
                 game.phase = "playing"

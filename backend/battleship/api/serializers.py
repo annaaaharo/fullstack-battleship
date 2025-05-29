@@ -2,9 +2,12 @@ from django.contrib.auth.models import User
 from rest_framework import serializers
 from .models import Player, Game, Vessel, Board, BoardVessel, Shot
 from django.contrib.auth.models import User
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError, ValidationError
+
 
 class UserSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True)
+    password = serializers.CharField(write_only=True, validators=[validate_password])
 
     class Meta:
         model = User
@@ -16,7 +19,7 @@ class UserSerializer(serializers.ModelSerializer):
             email=validated_data.get("email"),
             password=validated_data["password"]
         )
-        user.is_active = True  # Important perquè funcioni amb /api/token/
+        user.is_active = True
         user.save()
         return user
 
