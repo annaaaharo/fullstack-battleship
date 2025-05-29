@@ -9,16 +9,87 @@
 ## Group Information
 
 - Your group and team members:
-  - Group: [Your Group Name]
-  - Team members: [Member 1, Member 2]
+  - Group: [C03]
+  - Team members: [Èlia Garcia, Anna Haro]
 
 ## Tested Group Information
 
 ### Test group 1
 
 - Test group 1:
-  - Group: [Test Group Name]
-  - Team members: [Member 1, Member 2]
+  - Group: [C04]
+  - Team members: [Mario Esteban, Helena Amérigo]
+
+### Case A checklist
+
+- Initialization:
+  - [] authentication works correctly
+  - [] (**OPT**) registration is implemented
+  - [] game can be created
+- Gameplay:
+  - [] can place ships
+  - [] can fire shots
+  - [] can receive hits and misses
+  - [] can play against a bot
+  - [] game ends correctly (win/loss)
+  - [] (**OPT**) multiplayer is implemented
+  - [] multiplayer works correctly
+- Stress Testing:
+  - [] can handle multiple concurrent games
+  - [] can handle multiple concurrent players
+  - [] game can be restarted (disconnected players can rejoin)
+  - [] behaviour when cookies are disabled
+- Post game:
+
+  - [] (**OPT**) leaderboard is implemented
+
+- Additional tests (please specify):
+  - [] ...
+    - [] ...
+    - [] ...
+
+### Case B checklist
+
+- Initialization:
+  - [X] you can get a token pair
+  - [X] (**OPT**) registration is implemented
+  - [X] authorization is set up correctly for the Users API
+  - [X] game can be created
+- Gameplay:
+  - [X] can place ships
+  - [] can fire shots
+  - [] can receive hits and misses
+  - [] can play against a bot
+  - [] game ends correctly (win/loss)
+  - [] (**OPT**) multiplayer is implemented
+  - [] multiplayer works correctly
+- Post game:
+
+  - [] (**OPT**) leaderboard is implemented
+
+- Additional tests (please specify):
+  - [] ...
+    - [] ...
+    - [] ...
+  -Observacions: Els hi deixa col.locar els vaixells pero no els tenen inicialitzats de manera no hardcodejada. Els falta implementar el backend. Per aquest motiu la resta de funcionalitats no poden ser testejades (com els shots i demés).
+
+### Case C checklist
+
+- Summarize the interview
+
+## Group Information
+
+- Your group and team members:
+  - Group: [C03]
+  - Team members: [Èlia Garcia, Anna Haro]
+
+## Tested Group Information
+
+### Test group 2
+
+- Test group 1:
+  - Group: [C05]
+  - Team members: [Laia Beni, Francesc Navarro]
 
 ### Case A checklist
 
@@ -54,9 +125,9 @@
   - [] you can get a token pair
   - [] (**OPT**) registration is implemented
   - [] authorization is set up correctly for the Users API
-  - [] game can be created
+  - [X] game can be created
 - Gameplay:
-  - [] can place ships
+  - [X] can place ships
   - [] can fire shots
   - [] can receive hits and misses
   - [] can play against a bot
@@ -71,6 +142,7 @@
   - [] ...
     - [] ...
     - [] ...
+  -Observacions: Els hi deixa col.locar els vaixells pero no els tenen inicialitzats de manera no hardcodejada. Els falta implementar el backend. Per aquest motiu la resta de funcionalitats no poden ser testejades (com els shots i demés).
 
 ### Case C checklist
 
@@ -78,4 +150,4 @@
 
 ### Test group 2
 
-Repeat the same structure as above for the second test group.
+Backend va crear joc i posar vaixells.
