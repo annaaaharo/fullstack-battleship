@@ -80,8 +80,10 @@ export const useGameStore = defineStore("game", {
            this.gamePhase = gameState.phase;*/
 
             if (this.gamePhase === "playing") {
+              // Comparar amb el username del jugador actual
+              const authStore = useAuthStore();
               this.gameStatus =
-                game.turn === "player1" ? "Your turn" : "Opponent's turn";
+                game.turn === authStore.username ? "Your turn" : "Opponent's turn";
             } else if (this.gamePhase === "placement") {
               this.gameStatus = "Place your ships";
             } else if (this.gamePhase === "gameOver") {

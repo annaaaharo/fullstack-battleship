@@ -268,7 +268,7 @@ class BoardVesselViewSet(viewsets.ModelViewSet):
             # Si és un joc d'un sol jugador, passar directament a playing
             if game.players.count() == 1:
                 game.phase = "playing"
-                game.turn = board.player.nickname
+                game.turn = board.player.user.username
                 game.save()
                 print(f"Joc d'un jugador - canviant a phase: playing")
             else:
@@ -276,7 +276,7 @@ class BoardVesselViewSet(viewsets.ModelViewSet):
                 boards = game.boards.all()
                 if all(all_vessels_placed(game_board) for game_board in boards):
                     game.phase = "playing"
-                    game.turn = boards.first().player.nickname
+                    game.turn = boards.first().player.user.username
                     game.save()
                     print(f"Tots els jugadors han col·locat vaixells - canviant a phase: playing")
 
