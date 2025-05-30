@@ -6,7 +6,6 @@ import api from "@/services/api.js";
 export const useAuthStore = defineStore("auth", {
   state: () => ({
     username: null,
-    nickname: null,
     accessToken: null,
     refreshToken: null,
     isAuthenticated: false,
@@ -32,7 +31,6 @@ export const useAuthStore = defineStore("auth", {
     },
     initializeAuthStore() {
       this.username = localStorage.getItem("username");
-      this.nickname = localStorage.getItem("nickname");
       this.accessToken = localStorage.getItem("access");
       this.refreshToken = localStorage.getItem("refresh");
       this.isAuthenticated = !!this.accessToken;
