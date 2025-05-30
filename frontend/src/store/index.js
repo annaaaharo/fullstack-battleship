@@ -71,13 +71,27 @@ export const useGameStore = defineStore("game", {
           const game = response.data;
           this.gamePhase = game.phase;
           this.turn = game.turn;
-          const gameState = game.game_state_response?.data?.gameState;
-           /*this.playerBoard = gameState.player1.board;
+          const gameState = game.game_state_response?.data?.gameState || {};
+          console.log("GAME STATE:" + gameState);
+          if (gameState?.player1?.availableShips && gameState.player1.availableShips.length > 0) {
+            this.availableShips = gameState.player1.availableShips;
+          } else {
+            console.warn("⚠️ No s'han rebut els vaixells, inicialitzant manualment...");
+            this.availableShips = [
+              { type: 1, isVertical: true, size: 1 },
+              { type: 2, isVertical: true, size: 2 },
+              { type: 3, isVertical: true, size: 3 },
+              { type: 4, isVertical: true, size: 4 },
+              { type: 5, isVertical: true, size: 5 },
+            ];
+          }
+          /*this.playerBoard = gameState.player1.board;
            this.opponentBoard = gameState.player2.board;
            this.playerPlacedShips = gameState.player1.placedShips;
            this.opponentShips = gameState.player2.placedShips;
            this.availableShips = gameState.player1.availableShips;
            this.gamePhase = gameState.phase;*/
+
 
             if (this.gamePhase === "playing") {
               // Comparar amb el username del jugador actual
@@ -144,8 +158,13 @@ export const useGameStore = defineStore("game", {
 
     placeOpponentShips() {
       const shipList = [1, 2, 3, 4, 5];
+      console.log("Vaixells disponibles per col·locar:", this.availableShips);
       for (let type of shipList) {
         const ship = this.availableShips.find((s) => s.type === type);
+        if (!ship) {
+          console.warn(`No s'ha trobat el vaixell de tipus ${type}`);
+          continue; // o return, depenent de si vols aturar el procés
+        }
         let placed = false;
         while (!placed) {
           const row = Math.floor(Math.random() * 10);

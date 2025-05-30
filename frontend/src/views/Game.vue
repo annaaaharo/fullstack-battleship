@@ -34,11 +34,11 @@ onMounted(async () => {
   // To start a new game, uncomment the line below
   store.startNewGame();
   const gameId = await store.obtainId();
-
-  // To fetch the game state, uncomment the line below
-
   await store.getGameState(gameId);
-  // getUsers();
+  const gameState = store.gameState;
+  console.log("Després de getGameState:", store.gameState);
+  const availableShips = gameState.player1.availableShips;
+  console.log("Vaixells disponibles:", availableShips);
 });
 
 const onLogout = () => {

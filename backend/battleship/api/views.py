@@ -60,6 +60,7 @@ class GameViewSet(viewsets.ModelViewSet):
         
         game = serializer.save(owner=player)
         game.players.add(player)
+        game.save()
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
