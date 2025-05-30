@@ -5,6 +5,26 @@ const axiosInstance = AuthService.getAxiosInstance();
 
 export default {
 
+  getAvailableShips() {
+    return axiosInstance.get("/api/v1/vessels/")
+      .then(response => {
+        console.log("Backend vessels response:", response.data);
+        if (!response.data || response.data.length === 0) {
+          console.warn("No vessels received from backend!");
+        }
+        return response.data.map(vessel => ({
+          type: vessel.id,
+          isVertical: true,
+          size: vessel.size,
+          name: vessel.name
+        }));
+      })
+      .catch(error => {
+        console.error("Error obtenint vaixells:", error.response ? error.response.data : error);
+        throw error;
+      });
+  },
+
   getGameState(gameId) {
     return axiosInstance.get(`/api/v1/games/${gameId}`);
    },
@@ -21,9 +41,14 @@ export default {
     return AuthService.getAxiosInstance().get("/api/v1/players/");
   },
 
-  setGame(playerId) {
-    return axiosInstance.post("/api/v1/games/", { player: playerId })
-      .then(response => response.data.id);  // Retorna l'ID del joc creat
+  async setGame(playerId) {
+    try {
+      const response = await axios.post('/api/v1/games/', { player: playerId });
+      return response.data; // Assegura't que això retorna { id: <game_id>, ... }
+    } catch (error) {
+      console.error('Error creant joc:', error);
+      throw error;
+    }
   },
 
   setGameState(phase1, turn, id){
@@ -37,15 +62,20 @@ export default {
   getOrCreateBoard(gameId, playerId) {
     return axiosInstance.get(`/api/v1/boards/?game=${gameId}&player=${playerId}`)
       .then(response => {
-        if (response.data.results && response.data.results.length > 0) {
-          return response.data.results[0];
+        if (response.data.length > 0) {
+          console.log("Tauler existent trobat:", response.data[0]);
+          return response.data[0];
         } else {
-          // Crear nou board si no existeix
-          return axiosInstance.post(`/api/v1/boards/`, {
-            game: gameId,
-            player: playerId
-          }).then(response => response.data);
+          return axiosInstance.post('/api/v1/boards/', { game: gameId, player: playerId })
+            .then(response => {
+              console.log("Tauler creat:", response.data);
+              return response.data;
+            });
         }
+      })
+      .catch(error => {
+        console.error('Error obtenint o creant tauler:', error);
+        throw error;
       });
   },
 

@@ -69,40 +69,46 @@ export const useGameStore = defineStore("game", {
         .getGameState(gameId)
         .then((response) => {
           const game = response.data;
+          const gameState = game.game_state_response?.data?.gameState || {};
+          console.log("GAME STATE:", gameState);
+          console.log("Backend phase:", game.phase);
+
+          // Set game state properties
           this.gamePhase = game.phase;
           this.turn = game.turn;
-          const gameState = game.game_state_response?.data?.gameState || {};
-          console.log("GAME STATE:" + gameState);
-          if (gameState?.player1?.availableShips && gameState.player1.availableShips.length > 0) {
-            this.availableShips = gameState.player1.availableShips;
-          } else {
-            console.warn("⚠️ No s'han rebut els vaixells, inicialitzant manualment...");
-            this.availableShips = [
-              { type: 1, isVertical: true, size: 1 },
-              { type: 2, isVertical: true, size: 2 },
-              { type: 3, isVertical: true, size: 3 },
-              { type: 4, isVertical: true, size: 4 },
-              { type: 5, isVertical: true, size: 5 },
-            ];
-          }
-          /*this.playerBoard = gameState.player1.board;
-           this.opponentBoard = gameState.player2.board;
-           this.playerPlacedShips = gameState.player1.placedShips;
-           this.opponentShips = gameState.player2.placedShips;
-           this.availableShips = gameState.player1.availableShips;
-           this.gamePhase = gameState.phase;*/
 
+          // Handle player1 data
+          if (gameState.player1) {
+            this.playerBoard = gameState.player1.board || this.createEmptyBoard();
+            this.playerPlacedShips = gameState.player1.placedShips || [];
+            this.availableShips = gameState.player1.availableShips || this.availableShips;
+          } else {
+            console.warn("No player1 data received, initializing defaults...");
+            this.playerBoard = this.createEmptyBoard();
+            this.playerPlacedShips = [];
+            // No sobreescrivim availableShips si ja estan carregats
+          }
+
+          // Handle player2 data
+          if (gameState.player2) {
+            this.opponentBoard = gameState.player2.board || this.createEmptyBoard();
+            this.opponentShips = gameState.player2.placedShips || [];
+          } else {
+            this.opponentBoard = this.createEmptyBoard();
+            this.opponentShips = [];
+          }
 
             if (this.gamePhase === "playing") {
-              // Comparar amb el username del jugador actual
               const authStore = useAuthStore();
               this.gameStatus =
                 game.turn === authStore.username ? "Your turn" : "Opponent's turn";
+              this.availableShips = [];
             } else if (this.gamePhase === "placement") {
               this.gameStatus = "Place your ships";
             } else if (this.gamePhase === "gameOver") {
               this.gameStatus = "Game Over - Winner: " + (game.winner || "Unknown");
             }
+            console.log("PHASE:", this.gamePhase);
         })
         .catch((error) => {
           const message = error.response?.data?.detail || error.message;
@@ -124,23 +130,87 @@ export const useGameStore = defineStore("game", {
       this.playerPlacedShips = [];
       this.opponentShips = [];
       this.selectedShip = null;
-      this.availableShips = await api.getAvailableShips(); // TODO check with axios on how to avoid await.
+      this.gameId = null;
 
-      this.placeOpponentShips();
+      try {
+        const authStore = useAuthStore();
+        const gameResponse = await api.setGame(authStore.playerId);
+        this.gameId = gameResponse.id;
+        console.log("New game created with ID:", this.gameId);
 
+        const playerBoard = await api.getOrCreateBoard(this.gameId, authStore.playerId);
+        this.playerBoardId = playerBoard.id;
+        console.log("Player board created with ID:", this.playerBoardId);
+
+        const opponentBoard = await api.getOrCreateBoard(this.gameId, null);
+        this.opponentBoardId = opponentBoard.id;
+        console.log("Opponent board created with ID:", this.opponentBoardId);
+
+        const ships = await api.getAvailableShips();
+        this.availableShips = ships;
+        console.log("Available ships fetched:", this.availableShips);
+
+        await this.placeOpponentShipsInBackend();
+        await this.getGameState(this.gameId);
+      } catch (error) {
+        console.error("Error starting new game:", error);
+        this.availableShips = [];
+      }
     },
-    async obtainId(){
+    async obtainId() {
       const idPlayer = useAuthStore().playerId;
-      const id = await api.setGame(idPlayer);
-      this.gameId = id;
-      return id;
+      try {
+        const response = await api.setGame(idPlayer);
+        console.log('Resposta de setGame:', response); // Log complet de la resposta
+        const id = response.id || response.data?.id;
+        if (!id) {
+          throw new Error('No s’ha obtingut un ID de joc vàlid');
+        }
+        console.log("👉 Game ID obtingut:", id);
+        this.gameId = id;
+        return id;
+      } catch (error) {
+        console.error('Error obtenint ID del joc:', error);
+        throw error;
+      }
     },
 
-    placeShip(board, row, col, size, isVertical, type) {
+
+    async placeShip(board, row, col, size, isVertical, type, boardId) {
+      if (this.gamePhase !== "placement") {
+        console.warn("Cannot place ships, game is not in placement phase!");
+        return false;
+      }
+
+      if (!this.isValidPlacement(board, row, col, size, isVertical)) {
+        console.warn("Invalid ship placement!");
+        return false;
+      }
+
+      // Col·loca el vaixell al tauler
       for (let i = 0; i < size; i++) {
         const r = isVertical ? row + i : row;
         const c = isVertical ? col : col - i;
         board[r][c] = type;
+      }
+
+      // Envia el vaixell al backend
+      try {
+        const vesselData = {
+          board: boardId,
+          vessel: type,
+          ri: row,
+          ci: isVertical ? col : col - size + 1,
+          rf: isVertical ? row + size - 1 : row,
+          cf: col,
+          alive: true,
+        };
+        await api.placeShip(vesselData);
+        console.log("Vaixell enviat al backend:", vesselData);
+        return true;
+      } catch (error) {
+        console.error("Error enviant vaixell al backend:", error);
+        return false;
       }
     },
 
@@ -193,6 +263,7 @@ export const useGameStore = defineStore("game", {
               position: { row, col },
             });
             placed = true;
+            console.log(`Placed ship type ${type} at row ${row}, col ${col}, vertical: ${isVertical}`);
           }
         }
       }
@@ -212,33 +283,9 @@ export const useGameStore = defineStore("game", {
       if (this.gamePhase !== "placement" || !this.selectedShip) return;
 
       const ship = this.selectedShip;
-      if (
-          !this.isValidPlacement(
-              this.playerBoard,
-              row,
-              col,
-              ship.size,
-              ship.isVertical
-          )
-      )
+      if (!this.isValidPlacement(this.playerBoard, row, col, ship.size, ship.isVertical)) {
+        console.warn("Invalid ship placement!");
         return;
-
-      this.placeShip(
-          this.playerBoard,
-          row,
-          col,
-          ship.size,
-          ship.isVertical,
-          ship.type
-      );
-
-      this.playerPlacedShips.push({...ship, position: {row, col}});
-
-      // Si no tenim gameId, vol dir que hem entrat directament al joc
-      // En aquest cas, creem una nova partida
-      if (!this.gameId) {
-        const authStore = useAuthStore();
-        this.gameId = await api.setGame(authStore.playerId);
       }
 
       // Obtenir o crear el board del jugador
@@ -248,34 +295,28 @@ export const useGameStore = defineStore("game", {
         this.playerBoardId = board.id;
       }
 
-      // Enviar el vaixell al backend
-      try {
-        const authStore = useAuthStore();
-        const vesselData = {
-          board: this.playerBoardId,
-          vessel: ship.type, // L'ID del vessel al backend
-          ri: row,
-          ci: ship.isVertical ? col : col - ship.size + 1,
-          rf: ship.isVertical ? row + ship.size - 1 : row,
-          cf: col,
-          alive: true
-        };
-        
-        await api.placeShip(vesselData);
-        console.log('Vaixell enviat al backend:', vesselData);
-      } catch (error) {
-        console.error('Error enviant vaixell al backend:', error);
-      }
-
-      this.availableShips = this.availableShips.filter(
-          (s) => s.type !== ship.type
+      // Col·loca el vaixell utilitzant placeShip
+      const success = await this.placeShip(
+        this.playerBoard,
+        row,
+        col,
+        ship.size,
+        ship.isVertical,
+        ship.type,
+        this.playerBoardId
       );
-      this.selectedShip = null;
 
-      if (this.availableShips.length === 0) {
-        // El backend canviarà automàticament la fase quan detecti que tots els vaixells estan col·locats
-        await this.getGameState(this.gameId);
-        console.log("PHASE: " + this.gamePhase);
+      if (success) {
+        this.playerPlacedShips.push({ ...ship, position: { row, col } });
+        this.availableShips = this.availableShips.filter((s) => s.type !== ship.type);
+        this.selectedShip = null;
+        console.log("Vaixells disponibles restants:", this.availableShips);
+
+        if (this.availableShips.length === 0) {
+          console.log("Tots els vaixells col·locats, actualitzant estat...");
+          await this.getGameState(this.gameId);
+          console.log("PHASE:", this.gamePhase);
+        }
       }
     },
 
@@ -401,6 +442,77 @@ export const useGameStore = defineStore("game", {
       
       //si falla, ens toca
       this.gameStatus = "Your turn";
+    },
+
+    // index.js
+    async placeOpponentShipsInBackend() {
+      const shipList = [1, 2, 3, 4, 5];
+      console.log("Vaixells disponibles per col·locar:", this.availableShips);
+      if (!this.availableShips.length) {
+        console.error("No ships available to place for opponent!");
+        return;
+      }
+
+      for (let type of shipList) {
+        const ship = this.availableShips.find((s) => s.type === type);
+        if (!ship) {
+          console.warn(`No s'ha trobat el vaixell de tipus ${type}`);
+          continue;
+        }
+        let placed = false;
+        let attempts = 0;
+        while (!placed && attempts < 100) {
+          const row = Math.floor(Math.random() * 10);
+          const col = Math.floor(Math.random() * 10);
+          const isVertical = Math.random() > 0.5;
+          if (
+            this.isValidPlacement(
+              this.opponentBoard,
+              row,
+              col,
+              ship.size,
+              isVertical
+            )
+          ) {
+            // Update frontend board
+            this.placeShip(
+              this.opponentBoard,
+              row,
+              col,
+              ship.size,
+              isVertical,
+              ship.type
+            );
+            this.opponentShips.push({
+              ...ship,
+              isVertical,
+              position: { row, col },
+            });
+
+            // Send to backend
+            try {
+              const vesselData = {
+                board: this.opponentBoardId,
+                vessel: ship.type,
+                ri: row,
+                ci: isVertical ? col : col - ship.size + 1,
+                rf: isVertical ? row + ship.size - 1 : row,
+                cf: col,
+                alive: true
+              };
+              await api.placeShip(vesselData);
+              console.log(`Opponent ship type ${type} placed in backend:`, vesselData);
+              placed = true;
+            } catch (error) {
+              console.error(`Error placing opponent ship type ${type}:`, error);
+            }
+          }
+          attempts++;
+        }
+        if (!placed) {
+          console.error(`Failed to place opponent ship type ${type} after ${attempts} attempts`);
+        }
+      }
     },
   },
 });

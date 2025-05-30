@@ -10,20 +10,6 @@ import DockingArea from "../components/DockingArea.vue";
 const store = useGameStore();
 const authStore = useAuthStore();
 
-// const user = ref(null);
-
-// function getUsers() {
-//   api
-//     .getUser(1)
-//     .then((response) => {
-//       console.log(response.data);
-//       user.value = response.data;
-//     })
-//     .catch((error) => {
-//       console.error("Error fetching user data:", error);
-//     });
-//   console.log(user.value);
-// }
 
 onMounted(async () => {
    if (!authStore.isAuthenticated) {
@@ -31,14 +17,17 @@ onMounted(async () => {
     return;
   }
 
-  // To start a new game, uncomment the line below
-  store.startNewGame();
-  const gameId = await store.obtainId();
-  await store.getGameState(gameId);
-  const gameState = store.gameState;
-  console.log("Després de getGameState:", store.gameState);
-  const availableShips = gameState.player1.availableShips;
-  console.log("Vaixells disponibles:", availableShips);
+  try {
+    if (!store.gameId) {
+      const id = await store.obtainId();
+      await store.getGameState(id);
+    } else {
+      await store.getGameState(store.gameId);
+    }
+  } catch (error) {
+    console.error('Error inicialitzant el joc:', error);
+
+  }
 });
 
 const onLogout = () => {

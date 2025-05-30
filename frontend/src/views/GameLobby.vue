@@ -63,16 +63,12 @@ const toggleMyGames = async () => {
 };
 
 const createNewGame = async () => {
-  //per a que no es dupliqui
   if (loading.value) return;
-  
   try {
     loading.value = true;
-    const gameId = await api.setGame(authStore.playerId);
-    gameStore.gameId = gameId;
-    router.push("/game");
+    router.push('/game'); // Redirect without creating game
   } catch (err) {
-    error.value = "Error al crear nova partida";
+    error.value = "Error al redirigir a la partida";
     console.error(err);
   } finally {
     loading.value = false;

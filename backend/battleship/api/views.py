@@ -57,10 +57,17 @@ class GameViewSet(viewsets.ModelViewSet):
             player = get_object_or_404(models.Player, id=player_id)
         else:
             player = get_object_or_404(models.Player, user=User.objects.first())
-        
-        game = serializer.save(owner=player)
+
+        ensure_default_vessels()
+        game = serializer.save(owner=player, phase="placement")
         game.players.add(player)
         game.save()
+
+        # Crear un tauler per al jugador
+        board, created = Board.objects.get_or_create(game=game, player=player)
+        print(f"Tauler {'creat' if created else 'obtingut'} per al joc {game.id}, jugador {player.id}: board_id={board.id}")
+
+
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -220,9 +227,12 @@ class BoardViewSet(viewsets.ModelViewSet):
     search_fields = ['player__nickname']
 
     def perform_create(self, serializer):
-        player = get_object_or_404(models.Player, user=User.objects.first())
+        player_id = self.request.data.get('player')
+        player = get_object_or_404(models.Player, id=player_id)
         game = get_object_or_404(Game, id=self.request.data.get('game'))
+        board, created = Board.objects.get_or_create(game=game, player=player)
         serializer.save(player=player, game=game)
+        print(f"Tauler {'creat' if created else 'obtingut'} a BoardViewSet: board_id={board.id}, game_id={game.id}, player_id={player.id}")
 
 def all_vessels_placed(board):
     # Cada jugador ha de col·locar exactament 5 vaixells (1 de cada tipus)
@@ -246,6 +256,8 @@ def ensure_default_vessels():
                 "name": vessel_data["name"]
             }
         )
+        print(f"Vessels created/verified: {Vessel.objects.count()}")  # Debug
+
 
 class BoardVesselViewSet(viewsets.ModelViewSet):
     queryset = BoardVessel.objects.all()
@@ -254,28 +266,35 @@ class BoardVesselViewSet(viewsets.ModelViewSet):
     search_fields = ['vessel__name']
 
     def perform_create(self, serializer):
-        # Assegurar que els vaixells per defecte existeixen
         ensure_default_vessels()
-        
-        # Obtenir dades del frontend
-        board = get_object_or_404(Board, id=self.request.data.get('board'))
-        vessel = get_object_or_404(Vessel, id=self.request.data.get('vessel'))
-        
+
+        board_id = self.request.data.get('board')
+        vessel_id = self.request.data.get('vessel')
+        print(f"Creant BoardVessel: board_id={board_id}, vessel_id={vessel_id}")
+
+        board = get_object_or_404(Board, id=board_id)
+        vessel = get_object_or_404(Vessel, id=vessel_id)
+
         board_vessel = serializer.save(board=board, vessel=vessel)
         game = board_vessel.board.game
 
+        vessel_count = BoardVessel.objects.filter(board=board).count()
+        print(f"Vaixells col·locats al tauler {board.id}: {vessel_count}")
+        print(f"Joc ID: {game.id}, Jugadors: {game.players.count()}")
+
         # Comprovar si aquest jugador ha col·locat tots els seus vaixells
-        if all_vessels_placed(board):
-            # Si és un joc d'un sol jugador, passar directament a playing
+        if vessel_count >= 5:  # Relaxem la condició temporalment
+            print(f"Almenys 5 vaixells col·locats al tauler {board.id}")
             if game.players.count() == 1:
                 game.phase = "playing"
                 game.turn = board.player.user.username
                 game.save()
-                print(f"Joc d'un jugador - canviant a phase: playing")
+                print(f"Joc d'un jugador - canviant a phase: playing, turn: {game.turn}")
             else:
-                # Si és multijugador, comprovar si tots els jugadors han acabat
                 boards = game.boards.all()
-                if all(all_vessels_placed(game_board) for game_board in boards):
+                all_placed = all(BoardVessel.objects.filter(board=game_board).count() >= 5 for game_board in boards)
+                print(f"Tots els taulers han col·locat vaixells: {all_placed}")
+                if all_placed:
                     game.phase = "playing"
                     game.turn = boards.first().player.user.username
                     game.save()

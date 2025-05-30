@@ -11,15 +11,10 @@ from rest_framework import routers
 router = DefaultRouter()
 router.register(r'players', PlayerViewSet)
 router.register(r'games', GameViewSet)
-
-
 router.register(r'vessels', VesselViewSet, basename='vessels')
 router.register(r'boards', BoardViewSet, basename='boards')
 router.register(r'boardvessels', BoardVesselViewSet, basename='boardvessels')
 router.register(r'shots', ShotViewSet, basename='shots')
-
-# router.register(r'user', UserViewSet)
-
 router.register(r'users', UserViewSet, basename='user')
 
 # /api/v1/games/{gid}/players/
@@ -28,7 +23,6 @@ games_router.register(r'players', PlayerViewSet, basename='game-players')
 
 # /api/v1/games/{gid}/players/{pid}/vessels/
 game_players_router = NestedSimpleRouter(games_router, r'players', lookup='player')
-game_players_router.register(r'vessels', BoardVesselViewSet, basename='game-player-vessels')
 
 # /api/v1/games/{gid}/players/{pid}/shots/
 game_players_router.register(r'shots', ShotViewSet, basename='game-player-shots')
