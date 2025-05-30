@@ -230,11 +230,11 @@ def all_vessels_placed(board):
 def ensure_default_vessels():
     """Crear vaixells per defecte si no existeixen"""
     vessels_data = [
-        {"id": 1, "size": 1, "name": "Submarino"},
-        {"id": 2, "size": 2, "name": "Destructor"},
-        {"id": 3, "size": 3, "name": "Crucero"},
-        {"id": 4, "size": 4, "name": "Acorazado"},
-        {"id": 5, "size": 5, "name": "Portaaviones"},
+        {"id": 1, "size": 1, "name": "Patrol Boat"},
+        {"id": 2, "size": 2, "name": "Destroyer"},
+        {"id": 3, "size": 3, "name": "Cruiser"},
+        {"id": 4, "size": 4, "name": "Submarine"},
+        {"id": 5, "size": 5, "name": "Carrier"},
     ]
     
     for vessel_data in vessels_data:
