@@ -18,15 +18,11 @@ onMounted(async () => {
   }
 
   try {
-    if (!store.gameId) {
-      const id = await store.obtainId();
-      await store.getGameState(id);
-    } else {
-      await store.getGameState(store.gameId);
-    }
+    console.log("🎮 Initializing game...");
+    await store.startNewGame();
+    console.log("🎮 Game initialized with ID:", store.gameId);
   } catch (error) {
     console.error('Error inicialitzant el joc:', error);
-
   }
 });
 
@@ -58,7 +54,7 @@ const onLogout = () => {
         />
       </div>
 
-      <!-- Docking Area -->
+      <!-- Docking Area - Solo en fase placement -->
       <div v-if="store.gamePhase === 'placement'" class="col-lg-2">
         <h3 class="text-center">Dock</h3>
         <DockingArea
@@ -68,13 +64,31 @@ const onLogout = () => {
         />
       </div>
 
-      <!-- Controls -->
+      <!-- Game Controls - Para todas las otras fases -->
       <div v-else class="col-lg-2 d-flex flex-column justify-content-center">
         <div class="game-controls text-center">
           <div class="game-status mb-3">{{ store.gameStatus }}</div>
+          
+          <!-- Botón New Game solo en waiting -->
           <button v-if="store.gamePhase === 'waiting'" class="btn btn-primary" @click="store.startNewGame()">
             New Game
           </button>
+          
+          <!-- Información de juego en playing -->
+          <div v-if="store.gamePhase === 'playing'" class="playing-info">
+            <p class="mb-2"><strong>Phase:</strong> Playing</p>
+            <p class="mb-2"><strong>Turn:</strong> {{ store.turn || 'Unknown' }}</p>
+            <div class="alert alert-info">
+              Click on the enemy board to attack!
+            </div>
+          </div>
+          
+          <!-- Información de game over -->
+          <div v-if="store.gamePhase === 'gameOver'" class="game-over-info">
+            <div class="alert alert-success">
+              Game Over!
+            </div>
+          </div>
         </div>
       </div>
 

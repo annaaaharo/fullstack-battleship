@@ -116,6 +116,30 @@ export default {
     return axiosInstance.post(`/api/v1/games/${gameId}/join/`, { player: playerId });
   },
 
+  // Crear un jugador bot automáticamente
+  async createBotPlayer() {
+    try {
+      // Crear un usuario bot
+      const botUsername = `bot_${Date.now()}`;
+      const botUser = await axiosInstance.post('/api/v1/users/', {
+        username: botUsername,
+        email: `${botUsername}@bot.com`,
+        password: 'botpassword123'
+      });
+      
+      // Crear un jugador bot
+      const botPlayer = await axiosInstance.post('/api/v1/players/', {
+        user: botUser.data.id,
+        nickname: `Bot_${Date.now()}`
+      });
+      
+      return botPlayer.data;
+    } catch (error) {
+      console.error('Error creating bot player:', error);
+      throw error;
+    }
+  },
+
   //eliminar una partida específica
   deleteGame(gameId, playerId) {
     return axiosInstance.delete(`/api/v1/games/${gameId}/delete_game/?player_id=${playerId}`);

@@ -70,12 +70,19 @@ export const useGameStore = defineStore("game", {
         .then((response) => {
           const game = response.data;
           const gameState = game.game_state_response?.data?.gameState || {};
+          console.log("=== GET GAME STATE DEBUG ===");
+          console.log("Full response:", response.data);
           console.log("GAME STATE:", gameState);
           console.log("Backend phase:", game.phase);
+          console.log("Backend turn:", game.turn);
+          console.log("Backend winner:", game.winner);
 
           // Set game state properties
+          const oldPhase = this.gamePhase;
           this.gamePhase = game.phase;
           this.turn = game.turn;
+          
+          console.log(`Phase changed from ${oldPhase} to ${this.gamePhase}`);
 
           // Handle player1 data
           if (gameState.player1) {
@@ -98,20 +105,25 @@ export const useGameStore = defineStore("game", {
             this.opponentShips = [];
           }
 
-            if (this.gamePhase === "playing") {
-              const authStore = useAuthStore();
-              this.gameStatus =
-                game.turn === authStore.username ? "Your turn" : "Opponent's turn";
-              this.availableShips = [];
-            } else if (this.gamePhase === "placement") {
-              this.gameStatus = "Place your ships";
-            } else if (this.gamePhase === "gameOver") {
-              this.gameStatus = "Game Over - Winner: " + (game.winner || "Unknown");
-            }
-            console.log("PHASE:", this.gamePhase);
+          if (this.gamePhase === "playing") {
+            const authStore = useAuthStore();
+            this.gameStatus =
+              game.turn === authStore.username ? "Your turn" : "Opponent's turn";
+            this.availableShips = [];
+            console.log("🎮 GAME IS NOW IN PLAYING PHASE!");
+            console.log("Game Status set to:", this.gameStatus);
+          } else if (this.gamePhase === "placement") {
+            this.gameStatus = "Place your ships";
+            console.log("🚢 Still in placement phase");
+          } else if (this.gamePhase === "gameOver") {
+            this.gameStatus = "Game Over - Winner: " + (game.winner || "Unknown");
+          }
+          console.log("Final PHASE:", this.gamePhase);
+          console.log("=== END GET GAME STATE DEBUG ===");
         })
         .catch((error) => {
           const message = error.response?.data?.detail || error.message;
+          console.error("Error in getGameState:", error);
           throw new Error(message);
         });
     },
@@ -123,6 +135,9 @@ export const useGameStore = defineStore("game", {
     },
 
     async startNewGame() {
+      console.log("🎮 Starting new game...");
+      
+      // Limpiar completamente el estado anterior
       this.gamePhase = "placement";
       this.gameStatus = "Place your ships";
       this.playerBoard = this.createEmptyBoard();
@@ -131,27 +146,37 @@ export const useGameStore = defineStore("game", {
       this.opponentShips = [];
       this.selectedShip = null;
       this.gameId = null;
+      this.playerBoardId = null;
+      this.opponentBoardId = null;
+      this.availableShips = [];
 
       try {
         const authStore = useAuthStore();
+        console.log("🎮 Creating game for player:", authStore.playerId);
+        
         const gameResponse = await api.setGame(authStore.playerId);
         this.gameId = gameResponse.id;
-        console.log("New game created with ID:", this.gameId);
+        console.log("🎮 New game created with ID:", this.gameId);
 
+        // Crear tablero del jugador
         const playerBoard = await api.getOrCreateBoard(this.gameId, authStore.playerId);
         this.playerBoardId = playerBoard.id;
-        console.log("Player board created with ID:", this.playerBoardId);
-
-        const opponentBoard = await api.getOrCreateBoard(this.gameId, null);
-        this.opponentBoardId = opponentBoard.id;
-        console.log("Opponent board created with ID:", this.opponentBoardId);
+        console.log("🎮 Player board created with ID:", this.playerBoardId);
+        console.log(`🎮 Game ID is: ${this.gameId}, Player Board ID is: ${this.playerBoardId}`);
 
         const ships = await api.getAvailableShips();
         this.availableShips = ships;
-        console.log("Available ships fetched:", this.availableShips);
+        console.log("🎮 Available ships fetched:", this.availableShips);
 
-        await this.placeOpponentShipsInBackend();
+        // Colocar barcos del oponente solo en el frontend (para el juego local)
+        console.log("🤖 Placing opponent ships locally...");
+        await this.placeOpponentShipsLocally();
+        console.log("🤖 Opponent ships placed locally");
+
+        console.log(`🎮 Final game setup - Game ID: ${this.gameId}, Available ships: ${this.availableShips.length}`);
+        
         await this.getGameState(this.gameId);
+        console.log("🎮 Game state loaded, phase:", this.gamePhase);
       } catch (error) {
         console.error("Error starting new game:", error);
         this.availableShips = [];
@@ -164,7 +189,7 @@ export const useGameStore = defineStore("game", {
         console.log('Resposta de setGame:', response); // Log complet de la resposta
         const id = response.id || response.data?.id;
         if (!id) {
-          throw new Error('No s’ha obtingut un ID de joc vàlid');
+          throw new Error('No s\'ha obtingut un ID de joc vàlid');
         }
         console.log("👉 Game ID obtingut:", id);
         this.gameId = id;
@@ -288,6 +313,19 @@ export const useGameStore = defineStore("game", {
         return;
       }
 
+      // Verificar que no se dupliquen barcos - verificación más estricta
+      const existingShip = this.playerPlacedShips.find(s => s.type === ship.type);
+      if (existingShip) {
+        console.warn(`Ship type ${ship.type} already placed!`);
+        return;
+      }
+
+      // Verificar que no se exceda el límite de 5 barcos
+      if (this.playerPlacedShips.length >= 5) {
+        console.warn("Ya se han colocado todos los barcos (5)!");
+        return;
+      }
+
       // Obtenir o crear el board del jugador
       if (!this.playerBoardId) {
         const authStore = useAuthStore();
@@ -295,7 +333,10 @@ export const useGameStore = defineStore("game", {
         this.playerBoardId = board.id;
       }
 
-      // Col·loca el vaixell utilitzant placeShip
+      console.log(`🚢 Placing ship type ${ship.type} on game ${this.gameId}, board ${this.playerBoardId}`);
+      console.log(`🚢 Current placed ships: ${this.playerPlacedShips.length}/5`);
+
+      // Col·loca el vaixell utilizando placeShip
       const success = await this.placeShip(
         this.playerBoard,
         row,
@@ -311,11 +352,41 @@ export const useGameStore = defineStore("game", {
         this.availableShips = this.availableShips.filter((s) => s.type !== ship.type);
         this.selectedShip = null;
         console.log("Vaixells disponibles restants:", this.availableShips);
+        console.log(`🚢 Ships placed: ${this.playerPlacedShips.length}/5`);
 
-        if (this.availableShips.length === 0) {
+        if (this.availableShips.length === 0 && this.playerPlacedShips.length === 5) {
           console.log("Tots els vaixells col·locats, actualitzant estat...");
-          await this.getGameState(this.gameId);
-          console.log("PHASE:", this.gamePhase);
+          console.log("Fase actual abans del polling:", this.gamePhase);
+          console.log(`🎯 Starting polling for game ID: ${this.gameId}`);
+          console.log(`📊 Ships placed: ${this.playerPlacedShips.length}`);
+          console.log(`📊 Placed ship types:`, this.playerPlacedShips.map(s => s.type));
+          
+          // Hacer polling del estado del juego hasta que cambie a "playing"
+          const pollGameState = async () => {
+            for (let i = 0; i < 10; i++) {
+              console.log(`=== POLLING INTENTO ${i + 1} ===`);
+              console.log(`Polling game ID: ${this.gameId}`);
+              console.log("Fase abans de getGameState:", this.gamePhase);
+              
+              await this.getGameState(this.gameId);
+              
+              console.log("Fase després de getGameState:", this.gamePhase);
+              console.log("Game Status:", this.gameStatus);
+              console.log("Available Ships:", this.availableShips.length);
+              
+              if (this.gamePhase === "playing") {
+                console.log("🎉 ¡Juego cambiado a PLAYING! Saliendo del polling...");
+                return; // Salir del polling
+              }
+              
+              console.log(`Fase encara és ${this.gamePhase}, esperant 2 segons...`);
+              // Esperar 2 segundos antes del siguiente intento
+              await new Promise(resolve => setTimeout(resolve, 2000));
+            }
+            console.log("❌ Polling acabat sense canviar a playing");
+          };
+          
+          await pollGameState();
         }
       }
     },
@@ -474,15 +545,13 @@ export const useGameStore = defineStore("game", {
               isVertical
             )
           ) {
-            // Update frontend board
-            this.placeShip(
-              this.opponentBoard,
-              row,
-              col,
-              ship.size,
-              isVertical,
-              ship.type
-            );
+            // Update frontend board manually (sin llamar a placeShip)
+            for (let i = 0; i < ship.size; i++) {
+              const r = isVertical ? row + i : row;
+              const c = isVertical ? col : col - i;
+              this.opponentBoard[r][c] = ship.type;
+            }
+            
             this.opponentShips.push({
               ...ship,
               isVertical,
@@ -505,7 +574,61 @@ export const useGameStore = defineStore("game", {
               placed = true;
             } catch (error) {
               console.error(`Error placing opponent ship type ${type}:`, error);
+              // Si falla el backend, revertir el frontend
+              for (let i = 0; i < ship.size; i++) {
+                const r = isVertical ? row + i : row;
+                const c = isVertical ? col : col - i;
+                this.opponentBoard[r][c] = 0;
+              }
+              this.opponentShips.pop();
             }
+          }
+          attempts++;
+        }
+        if (!placed) {
+          console.error(`Failed to place opponent ship type ${type} after ${attempts} attempts`);
+        }
+      }
+    },
+
+    async placeOpponentShipsLocally() {
+      const shipList = [1, 2, 3, 4, 5];
+      console.log("Vaixells disponibles per col·locar:", this.availableShips);
+      for (let type of shipList) {
+        const ship = this.availableShips.find((s) => s.type === type);
+        if (!ship) {
+          console.warn(`No s'ha trobat el vaixell de tipus ${type}`);
+          continue;
+        }
+        let placed = false;
+        let attempts = 0;
+        while (!placed && attempts < 100) {
+          const row = Math.floor(Math.random() * 10);
+          const col = Math.floor(Math.random() * 10);
+          const isVertical = Math.random() > 0.5;
+          if (
+            this.isValidPlacement(
+              this.opponentBoard,
+              row,
+              col,
+              ship.size,
+              isVertical
+            )
+          ) {
+            // Update frontend board manually (solo local)
+            for (let i = 0; i < ship.size; i++) {
+              const r = isVertical ? row + i : row;
+              const c = isVertical ? col : col - i;
+              this.opponentBoard[r][c] = ship.type;
+            }
+            
+            this.opponentShips.push({
+              ...ship,
+              isVertical,
+              position: { row, col },
+            });
+            placed = true;
+            console.log(`Placed opponent ship type ${type} at row ${row}, col ${col}, vertical: ${isVertical}`);
           }
           attempts++;
         }
