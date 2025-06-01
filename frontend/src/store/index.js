@@ -101,8 +101,17 @@ export const useGameStore = defineStore("game", {
             this.opponentBoard = gameState.player2.board || this.createEmptyBoard();
             this.opponentShips = gameState.player2.placedShips || [];
           } else {
-            this.opponentBoard = this.createEmptyBoard();
-            this.opponentShips = [];
+            // En un joc d'un sol jugador, preservem el taulell de l'oponent local
+            console.log("No player2 data - preserving local opponent board for single player game");
+            // No sobreescriure opponentBoard si ja està col·locat localment
+            if (!this.opponentBoard || this.opponentBoard.every(row => row.every(cell => cell === 0))) {
+              this.opponentBoard = this.createEmptyBoard();
+            } else {
+              console.log("🛡️ Preservant taulell de l'oponent amb barcos:");
+              console.log("Barcos detectats:", this.opponentBoard.flat().filter(cell => cell > 0 && cell < 10).length);
+            }
+            // Preservar també opponentShips locals
+            // No canviem this.opponentShips si ja hi ha barcos col·locats
           }
 
           if (this.gamePhase === "playing") {
@@ -374,33 +383,11 @@ export const useGameStore = defineStore("game", {
           } catch (error) {
             console.error("❌ Error canviant fase al backend:", error);
             
-            // Fer polling com a fallback
-            console.log("🔄 Falling back to polling...");
-            const pollGameState = async () => {
-              for (let i = 0; i < 10; i++) {
-                console.log(`=== POLLING INTENTO ${i + 1} ===`);
-                console.log(`Polling game ID: ${this.gameId}`);
-                console.log("Fase abans de getGameState:", this.gamePhase);
-                
-                await this.getGameState(this.gameId);
-                
-                console.log("Fase després de getGameState:", this.gamePhase);
-                console.log("Game Status:", this.gameStatus);
-                console.log("Available Ships:", this.availableShips.length);
-                
-                if (this.gamePhase === "playing") {
-                  console.log("🎉 ¡Juego cambiado a PLAYING! Saliendo del polling...");
-                  return; // Salir del polling
-                }
-                
-                console.log(`Fase encara és ${this.gamePhase}, esperant 2 segons...`);
-                // Esperar 2 segundos antes del siguiente intento
-                await new Promise(resolve => setTimeout(resolve, 2000));
-              }
-              console.log("❌ Polling acabat sense canviar a playing");
-            };
-            
-            await pollGameState();
+            // Canviar igualment l'estat local per permetre el joc
+            console.log("🔄 Canviant estat local igualment...");
+            this.gamePhase = "playing";
+            this.gameStatus = "Your turn";
+            console.log("✅ Estat local forçat a playing");
           }
         }
       }
@@ -408,6 +395,11 @@ export const useGameStore = defineStore("game", {
 
     async handleOpponentBoardClick(row, col) {
       if (this.gamePhase !== "playing") return;
+      
+      console.log(`🎯 Shooting at position [${row}, ${col}]`);
+      console.log(`🎯 Cell value:`, this.opponentBoard[row][col]);
+      console.log(`🎯 Total ships on opponent board:`, this.opponentBoard.flat().filter(cell => cell > 0 && cell < 10).length);
+      
       if (this.opponentBoard[row][col] < 0) {
         this.gameStatus = "Already hit!";
         return;
@@ -643,13 +635,32 @@ export const useGameStore = defineStore("game", {
               position: { row, col },
             });
             placed = true;
-            console.log(`Placed opponent ship type ${type} at row ${row}, col ${col}, vertical: ${isVertical}`);
+            
+            // Log detallat de les posicions ocupades
+            const occupiedPositions = [];
+            for (let i = 0; i < ship.size; i++) {
+              const r = isVertical ? row + i : row;
+              const c = isVertical ? col : col - i;
+              occupiedPositions.push(`[${r},${c}]`);
+            }
+            console.log(`Placed opponent ship type ${type} (size ${ship.size}) at row ${row}, col ${col}, vertical: ${isVertical}`);
+            console.log(`🎯 Occupied positions: ${occupiedPositions.join(', ')}`);
           }
           attempts++;
         }
         if (!placed) {
           console.error(`Failed to place opponent ship type ${type} after ${attempts} attempts`);
         }
+      }
+      
+      // Log de l'estat final del taulell
+      console.log("🗺️ Estat final del taulell de l'oponent:");
+      for (let r = 0; r < 10; r++) {
+        let rowStr = `Row ${r}: `;
+        for (let c = 0; c < 10; c++) {
+          rowStr += this.opponentBoard[r][c].toString().padStart(2, ' ') + ' ';
+        }
+        console.log(rowStr);
       }
     },
   },
