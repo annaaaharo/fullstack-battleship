@@ -2,36 +2,27 @@ import AuthService from "@/services/auth.js";
 import axios from "axios";
 const axiosInstance = AuthService.getAxiosInstance();
 
-//.
+
 export default {
+
   getAvailableShips() {
-    return Promise.resolve([
-      {
-        type: 1,
-        isVertical: true,
-        size: 1,
-      },
-      {
-        type: 2,
-        isVertical: true,
-        size: 2,
-      },
-      {
-        type: 3,
-        isVertical: true,
-        size: 3,
-      },
-      {
-        type: 4,
-        isVertical: true,
-        size: 4,
-      },
-      {
-        type: 5,
-        isVertical: true,
-        size: 5,
-      },
-    ]);
+    return axiosInstance.get("/api/v1/vessels/")
+      .then(response => {
+        console.log("Backend vessels response:", response.data);
+        if (!response.data || response.data.length === 0) {
+          console.warn("No vessels received from backend!");
+        }
+        return response.data.map(vessel => ({
+          type: vessel.id,
+          isVertical: true,
+          size: vessel.size,
+          name: vessel.name
+        }));
+      })
+      .catch(error => {
+        console.error("Error obtenint vaixells:", error.response ? error.response.data : error);
+        throw error;
+      });
   },
 
   getGameState(gameId) {
@@ -50,10 +41,35 @@ export default {
     return AuthService.getAxiosInstance().get("/api/v1/players/");
   },
 
-  setGame(playerId) {
-  // Exemple: crea una nova partida per un jugador
-    return axiosInstance.post("/api/v1/games/", { player: playerId })
-      .then(response => response.data.id);  // Retorna l'ID del joc creat
+  async setGame(playerId) {
+    try {
+      const response = await axiosInstance.post('/api/v1/games/', { player: playerId });
+      console.log("Juego creado, respuesta completa:", JSON.stringify(response, null, 2));
+      const responseData = response.data.data || response.data; // Handle nested data
+
+      let gameId, boardId;
+      if (responseData.game && responseData.game.id) {
+        gameId = responseData.game.id;
+        boardId = responseData.board_id;
+      } else if (responseData.id) {
+        gameId = responseData.id;
+        boardId = responseData.board_id || null;
+      } else {
+        console.error("Respuesta inesperada:", responseData);
+        throw new Error("Respuesta del backend no contiene ID de juego válido");
+      }
+
+      if (!boardId) {
+        console.warn("No board_id in response, fetching board...");
+        const boardResponse = await this.getOrCreateBoard(gameId, playerId);
+        boardId = boardResponse.id;
+      }
+
+      return { id: gameId, board_id: boardId };
+    } catch (error) {
+      console.error("Error creant joc:", error.response ? error.response.data : error.message);
+      throw error;
+    }
   },
 
   setGameState(phase1, turn, id){
@@ -63,6 +79,37 @@ export default {
     return axiosInstance.post(`/api/v1/games/${id}/update_winner/`, {"phase": phase1, "winner": winner, "id": id});
   },
 
+  // Obtenir o crear el board d'un jugador per a una partida
+  getOrCreateBoard(gameId, playerId) {
+    return axiosInstance.get(`/api/v1/boards/?game=${gameId}&player=${playerId}`)
+      .then(response => {
+        if (response.data.length > 0) {
+          console.log("Tauler existent trobat:", response.data[0]);
+          return response.data[0];
+        } else {
+          return axiosInstance.post('/api/v1/boards/', { game: gameId, player: playerId })
+            .then(response => {
+              console.log("Tauler creat:", response.data);
+              return response.data;
+            });
+        }
+      })
+      .catch(error => {
+        console.error('Error obtenint o creant tauler:', error);
+        throw error;
+      });
+  },
+
+  // Obtenir board d'un jugador
+  getBoard(gameId, playerId) {
+    return axiosInstance.get(`/api/v1/boards/?game=${gameId}&player=${playerId}`);
+  },
+
+  // Obtenir tots els boards d'una partida
+  getGameBoards(gameId) {
+    return axiosInstance.get(`/api/v1/boards/?game=${gameId}`);
+  },
+
   createGame(){
     return axios.post("/api/v1/games/", {
       "width": 10,
@@ -70,11 +117,12 @@ export default {
     });
   },
 
-  placeShip(boardId, data) {
-    return axiosInstance.post(`/api/v1/boards/${boardId}/vessels/`, data);
+  // Col·locar vaixell (corregir endpoint)
+  placeShip(data) {
+    return axiosInstance.post(`/api/v1/boardvessels/`, data);
   },
 
-
+  // Disparar tir
   fireShot(data) {
     return axiosInstance.post(`/api/v1/shots/`, data);
     },
@@ -87,6 +135,45 @@ export default {
   // Unirse a una partida existente
   joinGame(gameId, playerId) {
     return axiosInstance.post(`/api/v1/games/${gameId}/join/`, { player: playerId });
+  },
+
+  // Crear un jugador bot automáticamente
+  async createBotPlayer() {
+    try {
+      // Crear un usuario bot
+      const botUsername = `bot_${Date.now()}`;
+      const botUser = await axiosInstance.post('/api/v1/users/', {
+        username: botUsername,
+        email: `${botUsername}@bot.com`,
+        password: 'botpassword123'
+      });
+      
+      // Crear un jugador bot
+      const botPlayer = await axiosInstance.post('/api/v1/players/', {
+        user: botUser.data.id,
+        nickname: `Bot_${Date.now()}`
+      });
+      
+      return botPlayer.data;
+    } catch (error) {
+      console.error('Error creating bot player:', error);
+      throw error;
+    }
+  },
+
+  //eliminar una partida específica
+  deleteGame(gameId, playerId) {
+    return axiosInstance.delete(`/api/v1/games/${gameId}/delete_game/?player_id=${playerId}`);
+  },
+
+  //eliminar totes les partides del jugador
+  clearMyGames(playerId) {
+    return axiosInstance.post(`/api/v1/games/clear_all_games/`, { player_id: playerId });
+  },
+
+  //obtenim les partides del jugador
+  getMyGames(playerId) {
+    return axiosInstance.get(`/api/v1/games/my_games/?player_id=${playerId}`);
   },
 
 };

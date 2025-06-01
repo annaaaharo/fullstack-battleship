@@ -42,6 +42,7 @@ class GameViewSet(viewsets.ModelViewSet):
     serializer_class = GameSerializer
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['phase']
+    filterset_fields = ['phase']
     ordering_fields = ['id']
     permission_classes = [AllowAny]
 
@@ -51,16 +52,25 @@ class GameViewSet(viewsets.ModelViewSet):
         return context
 
     def perform_create(self, serializer):
-        # Obtener el player del request data o usar el primer player como fallback
         player_id = self.request.data.get('player')
-        if player_id:
-            player = get_object_or_404(models.Player, id=player_id)
-        else:
-            player = get_object_or_404(models.Player, user=User.objects.first())
-        
-        game = serializer.save(owner=player)
-        # Añadir al creador como primer jugador
+        player = get_object_or_404(models.Player, id=player_id)
+        ensure_default_vessels()
+        game = serializer.save(owner=player, phase="placement")
         game.players.add(player)
+        game.save()
+        Board.objects.filter(game=game, player=player).delete()
+        board = Board.objects.create(game=game, player=player)
+        print(f"Tauler creat per al joc {game.id}, jugador {player.id}: board_id={board.id}")
+        serializer = self.get_serializer(game)
+        response_data = {
+            "game": serializer.data,
+            "board_id": board.id
+        }
+        print(f"GameViewSet response: {response_data}")
+        return Response(response_data, status=status.HTTP_201_CREATED)
+
+
+
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -142,6 +152,68 @@ class GameViewSet(viewsets.ModelViewSet):
             "phase": game.phase
         })
 
+    @action(detail=True, methods=["delete"])
+    def delete_game(self, request, pk=None):
+        #eliminem una partida específica
+        game = self.get_object()
+        player_id = request.data.get("player_id") or request.query_params.get("player_id")
+        
+        if not player_id:
+            return Response({"error": "player_id required"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            player = get_object_or_404(Player, id=player_id)
+            #verificar que el jugador és el propietari de la partida
+            if game.owner != player:
+                return Response({"error": "You can only delete your own games"}, status=status.HTTP_403_FORBIDDEN)
+            
+            game_id = game.id
+            game.delete()
+            return Response({
+                "status": "success", 
+                "message": f"Partida {game_id} eliminada correctament"
+            })
+        except:
+            return Response({"error": "Player not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    @action(detail=False, methods=["post"])
+    def clear_all_games(self, request):
+        #eliminem les partides del jugador
+        player_id = request.data.get("player_id")
+        
+        if player_id:
+            #només eliminem les partides del jugador
+            try:
+                player = get_object_or_404(Player, id=player_id)
+                games_count = Game.objects.filter(owner=player).count()
+                Game.objects.filter(owner=player).delete()
+                return Response({
+                    "status": "success", 
+                    "message": f"Eliminadas {games_count} partidas del jugador {player.nickname}"
+                })
+            except:
+                return Response({"error": "Player not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+            
+
+    @action(detail=False, methods=["get"])
+    def my_games(self, request):
+        #obtem les partides del jugador
+        player_id = request.query_params.get("player_id")
+        if not player_id:
+            return Response({"error": "player_id required"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            player = get_object_or_404(Player, id=player_id)
+            games = Game.objects.filter(owner=player)
+            serializer = self.get_serializer(games, many=True)
+            return Response({
+                "count": games.count(),
+                "games": serializer.data
+            })
+        except:
+            return Response({"error": "Player not found"}, status=status.HTTP_404_NOT_FOUND)
+
 
 class VesselViewSet(viewsets.ModelViewSet):
     queryset = Vessel.objects.all()
@@ -158,13 +230,36 @@ class BoardViewSet(viewsets.ModelViewSet):
     search_fields = ['player__nickname']
 
     def perform_create(self, serializer):
-        player = get_object_or_404(models.Player, user=User.objects.first())
+        player_id = self.request.data.get('player')
+        player = get_object_or_404(models.Player, id=player_id)
         game = get_object_or_404(Game, id=self.request.data.get('game'))
+        board, created = Board.objects.get_or_create(game=game, player=player)
         serializer.save(player=player, game=game)
+        print(f"Tauler {'creat' if created else 'obtingut'} a BoardViewSet: board_id={board.id}, game_id={game.id}, player_id={player.id}")
 
 def all_vessels_placed(board):
-    total_vessels = Vessel.objects.count()
-    return BoardVessel.objects.filter(board=board).count() == total_vessels
+    # Cada jugador ha de col·locar exactament 5 vaixells (1 de cada tipus)
+    return BoardVessel.objects.filter(board=board).count() == 5
+
+def ensure_default_vessels():
+    """Crear vaixells per defecte si no existeixen"""
+    vessels_data = [
+        {"id": 1, "size": 1, "name": "Patrol Boat"},
+        {"id": 2, "size": 2, "name": "Destroyer"},
+        {"id": 3, "size": 3, "name": "Cruiser"},
+        {"id": 4, "size": 4, "name": "Submarine"},
+        {"id": 5, "size": 5, "name": "Carrier"},
+    ]
+    
+    for vessel_data in vessels_data:
+        Vessel.objects.get_or_create(
+            id=vessel_data["id"],
+            defaults={
+                "size": vessel_data["size"],
+                "name": vessel_data["name"]
+            }
+        )
+        print(f"Vaixells creats/verificats: {Vessel.objects.count()}")  # Debug
 
 class BoardVesselViewSet(viewsets.ModelViewSet):
     queryset = BoardVessel.objects.all()
@@ -173,18 +268,53 @@ class BoardVesselViewSet(viewsets.ModelViewSet):
     search_fields = ['vessel__name']
 
     def perform_create(self, serializer):
-        board_vessel = serializer.save()
-        game = board_vessel.board.game
-        print("➡️ Vessel placed. Game:", game.id)
+        board_id = self.request.data.get('board')
+        vessel_id = self.request.data.get('vessel')
+        print(f"Creant BoardVessel: board_id={board_id}, vessel_id={vessel_id}, request_data={self.request.data}")
 
-        boards = game.board_set.all()
-        print("🔎 Number of boards:", boards.count())
-        if boards.count() == 2:
-            if all(all_vessels_placed(board) for board in boards):
-                print("✅ All vessels placed. Changing phase to 'playing'.")
+        # Fetch board and vessel for serializer
+        board = get_object_or_404(Board, id=board_id)
+        vessel = get_object_or_404(Vessel, id=vessel_id)
+
+        # Save BoardVessel (serializer validation handles duplicates and max count)
+        board_vessel = serializer.save(board=board, vessel=vessel)
+        print(f"✅ BoardVessel creado: id={board_vessel.id}, board_id={board_id}, vessel_id={vessel_id}")
+
+        # Update game state if necessary
+        game = board_vessel.board.game
+        vessel_count = BoardVessel.objects.filter(board=board).count()
+        print(f"Vaixells col·locats al tauler {board.id}: {vessel_count}")
+
+        if vessel_count >= 5:
+            print(f"Jugador {board.player.nickname} ha colocado todos los barcos ({vessel_count})")
+            all_boards = game.boards.all()
+            print(f"Tableros en el juego: {[b.id for b in all_boards]}")
+
+            if game.players.count() == 1:
+                print("Juego de un solo jugador detectado")
                 game.phase = "playing"
-                game.turn = boards.first().owner  # o el jugador que vulguis
+                game.turn = board.player.user.username
                 game.save()
+                print(f"CAMBIANDO A FASE PLAYING (1 jugador) - turn: {game.turn}")
+            else:
+                all_players_ready = all(
+                    BoardVessel.objects.filter(board=game_board).count() >= 5
+                    for game_board in all_boards
+                )
+                print(f"Todos los jugadores preparados: {all_players_ready}")
+
+                if all_players_ready:
+                    game.phase = "playing"
+                    human_player = next(
+                        (game_board.player for game_board in all_boards
+                         if not game_board.player.nickname.startswith('Bot_')),
+                        all_boards.first().player
+                    )
+                    game.turn = human_player.user.username
+                    game.save()
+                    print(f"CAMBIANDO A FASE PLAYING (2+ jugadores) - turn: {game.turn}")
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 class ShotViewSet(viewsets.ModelViewSet):
     queryset = Shot.objects.all()
@@ -194,7 +324,8 @@ class ShotViewSet(viewsets.ModelViewSet):
     ordering_fields = ['id']
 
     def perform_create(self, serializer):
-        player = get_object_or_404(models.Player, user=User.objects.first())
+        # Obtener datos del frontend en lugar de hardcodear
+        player = get_object_or_404(models.Player, id=self.request.data.get('player'))
         game = get_object_or_404(Game, id=self.request.data.get('game'))
         board = get_object_or_404(Board, id=self.request.data.get('board'))
         serializer.save(player=player, game=game, board=board)
