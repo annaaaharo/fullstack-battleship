@@ -361,32 +361,47 @@ export const useGameStore = defineStore("game", {
           console.log(`📊 Ships placed: ${this.playerPlacedShips.length}`);
           console.log(`📊 Placed ship types:`, this.playerPlacedShips.map(s => s.type));
           
-          // Hacer polling del estado del juego hasta que cambie a "playing"
-          const pollGameState = async () => {
-            for (let i = 0; i < 10; i++) {
-              console.log(`=== POLLING INTENTO ${i + 1} ===`);
-              console.log(`Polling game ID: ${this.gameId}`);
-              console.log("Fase abans de getGameState:", this.gamePhase);
-              
-              await this.getGameState(this.gameId);
-              
-              console.log("Fase després de getGameState:", this.gamePhase);
-              console.log("Game Status:", this.gameStatus);
-              console.log("Available Ships:", this.availableShips.length);
-              
-              if (this.gamePhase === "playing") {
-                console.log("🎉 ¡Juego cambiado a PLAYING! Saliendo del polling...");
-                return; // Salir del polling
+          // Per un joc d'un sol jugador contra bot local, forçar el canvi de fase
+          try {
+            const authStore = useAuthStore();
+            await api.setGameState("playing", authStore.username, this.gameId);
+            console.log("✅ Fase canviada a playing al backend");
+            
+            // Actualitzar l'estat local immediatament
+            this.gamePhase = "playing";
+            this.gameStatus = "Your turn";
+            console.log("✅ Estat local actualitzat a playing");
+          } catch (error) {
+            console.error("❌ Error canviant fase al backend:", error);
+            
+            // Fer polling com a fallback
+            console.log("🔄 Falling back to polling...");
+            const pollGameState = async () => {
+              for (let i = 0; i < 10; i++) {
+                console.log(`=== POLLING INTENTO ${i + 1} ===`);
+                console.log(`Polling game ID: ${this.gameId}`);
+                console.log("Fase abans de getGameState:", this.gamePhase);
+                
+                await this.getGameState(this.gameId);
+                
+                console.log("Fase després de getGameState:", this.gamePhase);
+                console.log("Game Status:", this.gameStatus);
+                console.log("Available Ships:", this.availableShips.length);
+                
+                if (this.gamePhase === "playing") {
+                  console.log("🎉 ¡Juego cambiado a PLAYING! Saliendo del polling...");
+                  return; // Salir del polling
+                }
+                
+                console.log(`Fase encara és ${this.gamePhase}, esperant 2 segons...`);
+                // Esperar 2 segundos antes del siguiente intento
+                await new Promise(resolve => setTimeout(resolve, 2000));
               }
-              
-              console.log(`Fase encara és ${this.gamePhase}, esperant 2 segons...`);
-              // Esperar 2 segundos antes del siguiente intento
-              await new Promise(resolve => setTimeout(resolve, 2000));
-            }
-            console.log("❌ Polling acabat sense canviar a playing");
-          };
-          
-          await pollGameState();
+              console.log("❌ Polling acabat sense canviar a playing");
+            };
+            
+            await pollGameState();
+          }
         }
       }
     },
