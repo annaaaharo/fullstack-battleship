@@ -67,6 +67,16 @@ class BoardVesselSerializer(serializers.ModelSerializer):
         model = BoardVessel
         fields = '__all__'
 
+    def validate(self, data):
+        board = data.get('board')
+        vessel = data.get('vessel')
+        if board and vessel:
+            if BoardVessel.objects.filter(board=board, vessel=vessel).exists():
+                raise serializers.ValidationError(f"Vessel type {vessel.id} already placed on board {board.id}")
+            if BoardVessel.objects.filter(board=board).count() >= 5:
+                raise serializers.ValidationError(f"Maximum 5 vessels allowed on board {board.id}")
+        return data
+
 class ShotSerializer(serializers.ModelSerializer):
     player = serializers.ReadOnlyField(source='player.nickname')
     game = serializers.ReadOnlyField(source='game.id')

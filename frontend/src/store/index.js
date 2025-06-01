@@ -15,8 +15,8 @@ export const useGameStore = defineStore("game", {
     contadorHitsPlayer: 0,
     contadorHitsBot: 0,
     gameId: null,
-    playerBoardId: null, // ID del board del jugador al backend
-    opponentBoardId: null, // ID del board de l'oponent al backend
+    playerBoardId: null,
+    opponentBoardId: null,
   }),
 
   actions: {
@@ -32,38 +32,6 @@ export const useGameStore = defineStore("game", {
         });
     },
 
-    /*
-    async getGameState(gameId) {
-      return api
-        .getGameState(gameId)
-        .then((response) => {
-          response = JSON.parse(response); // this is a mock, in real case it will be axios response
-          console.log("response", response);
-          const gameState = response.data.gameState;
-          this.playerBoard = gameState.player1.board;
-          this.opponentBoard = gameState.player2.board;
-          this.playerPlacedShips = gameState.player1.placedShips;
-          this.opponentShips = gameState.player2.placedShips;
-          this.availableShips = gameState.player1.availableShips;
-          this.gamePhase = gameState.phase;
-          this.gameStatus =
-             gameState.turn === "player1" ? "Your turn" : "Opponent's turn";
-          if (this.gamePhase === "playing") {
-            this.gameStatus =
-              gameState.turn === "player1" ? "Your turn" : "Opponent's turn";
-          } else if (this.gamePhase === "placement") {
-            this.gameStatus = "Place your ships";
-          } else if (this.gamePhase === "gameOver") {
-            this.gameStatus = "Game Over - Winner " + gameState.winner;
-          }
-        })
-        .catch((error) => {
-          const message = error.response?.data?.detail || error.message;
-          throw new Error(message);
-        });
-    },
-
-    */
     async getGameState(gameId) {
       return api
         .getGameState(gameId)
@@ -165,11 +133,19 @@ export const useGameStore = defineStore("game", {
         
         const gameResponse = await api.setGame(authStore.playerId);
         this.gameId = gameResponse.id;
-        console.log("🎮 New game created with ID:", this.gameId);
+        this.playerBoardId = gameResponse.board_id; // Usar el board_id del response
+        console.log("🎮 New game created with ID:", this.gameId, "Player board ID:", this.playerBoardId);
+
+        if (!this.playerBoardId) {
+          console.warn("No playerBoardId, fetching board...");
+          const board = await api.getOrCreateBoard(this.gameId, authStore.playerId);
+          this.playerBoardId = board.id;
+        }
+        console.log(`🎮 Game ID is: ${this.gameId}, Player Board ID is: ${this.playerBoardId}`);
 
         // Crear tablero del jugador
-        const playerBoard = await api.getOrCreateBoard(this.gameId, authStore.playerId);
-        this.playerBoardId = playerBoard.id;
+        //const playerBoard = await api.getOrCreateBoard(this.gameId, authStore.playerId);
+        //this.playerBoardId = playerBoard.id;
         console.log("🎮 Player board created with ID:", this.playerBoardId);
         console.log(`🎮 Game ID is: ${this.gameId}, Player Board ID is: ${this.playerBoardId}`);
 
@@ -394,6 +370,10 @@ export const useGameStore = defineStore("game", {
     },
 
     async handleOpponentBoardClick(row, col) {
+      if (this.gamePhase === "gameOver") {
+        console.log("Game is over, no more shots allowed!");
+        return;
+      }
       if (this.gamePhase !== "playing") return;
       
       console.log(`🎯 Shooting at position [${row}, ${col}]`);

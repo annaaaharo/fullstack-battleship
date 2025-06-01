@@ -53,19 +53,22 @@ class GameViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         player_id = self.request.data.get('player')
-        if player_id:
-            player = get_object_or_404(models.Player, id=player_id)
-        else:
-            player = get_object_or_404(models.Player, user=User.objects.first())
-
+        player = get_object_or_404(models.Player, id=player_id)
         ensure_default_vessels()
         game = serializer.save(owner=player, phase="placement")
         game.players.add(player)
         game.save()
+        Board.objects.filter(game=game, player=player).delete()
+        board = Board.objects.create(game=game, player=player)
+        print(f"Tauler creat per al joc {game.id}, jugador {player.id}: board_id={board.id}")
+        serializer = self.get_serializer(game)
+        response_data = {
+            "game": serializer.data,
+            "board_id": board.id
+        }
+        print(f"GameViewSet response: {response_data}")
+        return Response(response_data, status=status.HTTP_201_CREATED)
 
-        # Crear un tauler per al jugador
-        board, created = Board.objects.get_or_create(game=game, player=player)
-        print(f"Tauler {'creat' if created else 'obtingut'} per al joc {game.id}, jugador {player.id}: board_id={board.id}")
 
 
 
@@ -258,7 +261,6 @@ def ensure_default_vessels():
         )
         print(f"Vaixells creats/verificats: {Vessel.objects.count()}")  # Debug
 
-
 class BoardVesselViewSet(viewsets.ModelViewSet):
     queryset = BoardVessel.objects.all()
     serializer_class = BoardVesselSerializer
@@ -266,47 +268,28 @@ class BoardVesselViewSet(viewsets.ModelViewSet):
     search_fields = ['vessel__name']
 
     def perform_create(self, serializer):
-        ensure_default_vessels()
-
         board_id = self.request.data.get('board')
         vessel_id = self.request.data.get('vessel')
-        print(f"Creant BoardVessel: board_id={board_id}, vessel_id={vessel_id}")
+        print(f"Creant BoardVessel: board_id={board_id}, vessel_id={vessel_id}, request_data={self.request.data}")
 
+        # Fetch board and vessel for serializer
         board = get_object_or_404(Board, id=board_id)
         vessel = get_object_or_404(Vessel, id=vessel_id)
 
-        # Verificar que no se duplique el mismo tipo de barco
-        existing_vessel = BoardVessel.objects.filter(board=board, vessel=vessel).first()
-        if existing_vessel:
-            print(f"❌ Barco tipo {vessel_id} ya existe en el tablero {board_id}")
-            return Response({"error": f"Vessel type {vessel_id} already placed on this board"}, 
-                          status=status.HTTP_400_BAD_REQUEST)
-
-        # Comprovar si aquest jugador ha col·locat tots els seus vaixells
-        vessel_count_before = BoardVessel.objects.filter(board=board).count()
-        if vessel_count_before >= 5:
-            print(f"❌ Ya hay 5 barcos en el tablero {board_id}")
-            return Response({"error": "Maximum 5 vessels allowed per board"}, 
-                          status=status.HTTP_400_BAD_REQUEST)
-
+        # Save BoardVessel (serializer validation handles duplicates and max count)
         board_vessel = serializer.save(board=board, vessel=vessel)
-        game = board_vessel.board.game
+        print(f"✅ BoardVessel creado: id={board_vessel.id}, board_id={board_id}, vessel_id={vessel_id}")
 
+        # Update game state if necessary
+        game = board_vessel.board.game
         vessel_count = BoardVessel.objects.filter(board=board).count()
         print(f"Vaixells col·locats al tauler {board.id}: {vessel_count}")
-        print(f"Joc ID: {game.id}, Jugadors: {game.players.count()}")
-        print(f"Fase actual del juego: {game.phase}")
 
-        # Comprobar si este jugador ha colocado todos sus barcos
-        if vessel_count >= 5:  # Cada jugador ha de colocar 5 barcos
+        if vessel_count >= 5:
             print(f"Jugador {board.player.nickname} ha colocado todos los barcos ({vessel_count})")
-            
-            # Obtener todos los tableros del juego
             all_boards = game.boards.all()
             print(f"Tableros en el juego: {[b.id for b in all_boards]}")
-            print(f"Número de jugadores en el juego: {game.players.count()}")
-            
-            # Si solo hay 1 jugador, cambiar directamente a playing
+
             if game.players.count() == 1:
                 print("Juego de un solo jugador detectado")
                 game.phase = "playing"
@@ -314,36 +297,24 @@ class BoardVesselViewSet(viewsets.ModelViewSet):
                 game.save()
                 print(f"CAMBIANDO A FASE PLAYING (1 jugador) - turn: {game.turn}")
             else:
-                # Verificar si todos los jugadores han colocado sus barcos (2+ jugadores)
-                all_players_ready = True
-                for game_board in all_boards:
-                    board_vessel_count = BoardVessel.objects.filter(board=game_board).count()
-                    print(f"Tablero {game_board.id} (jugador {game_board.player.nickname}): {board_vessel_count} barcos")
-                    if board_vessel_count < 5:
-                        all_players_ready = False
-                        break
-                
+                all_players_ready = all(
+                    BoardVessel.objects.filter(board=game_board).count() >= 5
+                    for game_board in all_boards
+                )
                 print(f"Todos los jugadores preparados: {all_players_ready}")
-                
+
                 if all_players_ready:
                     game.phase = "playing"
-                    # Establecer el turno al primer jugador (el humano, no el bot)
-                    human_player = None
-                    for game_board in all_boards:
-                        if not game_board.player.nickname.startswith('Bot_'):
-                            human_player = game_board.player
-                            break
-                    
-                    if human_player:
-                        game.turn = human_player.user.username
-                    else:
-                        # Fallback al primer jugador
-                        game.turn = all_boards.first().player.user.username
-                    
+                    human_player = next(
+                        (game_board.player for game_board in all_boards
+                         if not game_board.player.nickname.startswith('Bot_')),
+                        all_boards.first().player
+                    )
+                    game.turn = human_player.user.username
                     game.save()
                     print(f"CAMBIANDO A FASE PLAYING (2+ jugadores) - turn: {game.turn}")
-                else:
-                    print(f"Esperando que otros jugadores coloquen sus barcos")
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 class ShotViewSet(viewsets.ModelViewSet):
     queryset = Shot.objects.all()
