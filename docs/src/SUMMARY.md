@@ -16,5 +16,4 @@
   - [Proves Creuades](./beta-testing.md)
   - [Captures de Funcionament](./captures.md)
 
-- [Desplegament](./desplegament.md)
 - [Conclusions](./conclusions.md)
