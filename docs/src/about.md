@@ -6,7 +6,7 @@
 | C03   | Garcia Rovira, Èlia | Haro Fernández, Anna | 
 
 
-{{#authors eliagarcia, annaaaharo}}
+{{#authors eliagarcia, #authors annaaaharo}}
 
 
 > [!CAUTION]
