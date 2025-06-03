@@ -1,81 +1,61 @@
-# Beta Testing
+# Objectius
 
-## Testing scenarios
+Aquest apartat llista els objectius establerts per a la pràctica del joc d'enfonsar la flota, segons l'enunciat, indicant quins s'han complert i quins no.
 
-- Case A: The game is fully functional - i.e., frontend and backend are implemented and communicate correctly. In this case, the testing is performed on the frontend by playing the game.
-- Case B: The game is partially functional - i.e., frontend is not fully connected to the backend. In this case, the testing is performed on the backend by sending requests to the API endpoints using the `api/v1/*/` endpoints or `docs/` url.
-- Case C: The backend is partially functional - i.e., the backend is not fully implemented. In this case, the testers will interview the developers about what is working and what is not, and about the main issues they encountered and discuss/advise on how to fix them.
+## Objectius Complerts
 
-## Group Information
+### Back-End
 
-- Your group and team members:
-  - Group: [Your Group Name]
-  - Team members: [Member 1, Member 2]
+- **Crear aplicació CRUD amb autentificació per a gestionar el model d'aplicació:**  
+  S'ha implementat una aplicació CRUD completa amb Django REST Framework, gestionant models com `User`, `Player`, `Game`, `Vessel`, `Board`, `BoardVessel` i `Shot`.  
+  Els endpoints permeten crear, llegir, actualitzar i eliminar dades, amb autentificació basada en JWT per protegir les operacions.  
+  **Exemples d'endpoints:**  
+  - `/api/v1/users/` (creació d'usuaris)  
+  - `/api/v1/games/` (gestió de partides)  
+  - `/api/v1/boardvessels/` (col·locació de vaixells)  
+  - `/api/v1/shots/` (registre de tirs)
 
-## Tested Group Information
+- **Gestionar la lògica del joc:**  
+  El backend controla la lògica del joc, incloent:
+  - Creació de partides
+  - Col·locació de vaixells
+  - Processament de tirs
+  - Determinació del guanyador  
 
-### Test group 1
+  Les fases del joc (`placement`, `playing`, `gameOver`) es gestionen amb endpoints com:
+  - `/api/v1/games/{id}/update_phase/`
+  - `/api/v1/games/{id}/update_winner/`
 
-- Test group 1:
-  - Group: [Test Group Name]
-  - Team members: [Member 1, Member 2]
+### Front-End
 
-### Case A checklist
+- **Interacció amb l'usuari per a visualització de dades i recollida d'accions:**  
+  S'ha desenvolupat una interfície interactiva amb Vue.js, que permet als usuaris:
+  - Visualitzar els taulers (`playerBoard` i `opponentBoard`)
+  - Col·locar vaixells mitjançant clics
+  - Disparar durant la fase de joc  
 
-- Initialization:
-  - [] authentication works correctly
-  - [] (**OPT**) registration is implemented
-  - [] game can be created
-- Gameplay:
-  - [] can place ships
-  - [] can fire shots
-  - [] can receive hits and misses
-  - [] can play against a bot
-  - [] game ends correctly (win/loss)
-  - [] (**OPT**) multiplayer is implemented
-  - [] multiplayer works correctly
-- Stress Testing:
-  - [] can handle multiple concurrent games
-  - [] can handle multiple concurrent players
-  - [] game can be restarted (disconnected players can rejoin)
-  - [] behaviour when cookies are disabled
-- Post game:
+  Pinia gestiona l'estat del joc, mostrant missatges com "Your turn" o "Game Over".  
+  Inclou formularis per a:
+  - Registre i inici de sessió
+  - Taulers visuals per a col·locació i tirs
 
-  - [] (**OPT**) leaderboard is implemented
+- **Comunicació segura amb el back-end:**  
+  El frontend utilitza crides HTTP segures amb Axios, amb tokens JWT emmagatzemats a `LocalStorage`.  
+  Aquestes crides inclouen autenticació per protegir:
+  - Creació de partides
+  - Col·locació de vaixells
+  - Disparar
 
-- Additional tests (please specify):
-  - [] ...
-    - [] ...
-    - [] ...
+### Addicionals
 
-### Case B checklist
+- Suport per a múltiples jocs i jugadors concurrents, amb taulers independents.
+- Reanudació de partides en cas de desconnexió, restaurant l'estat des del backend.
+- Funcionament correcte amb galetes desactivades, gràcies a l'ús de `LocalStorage`.
 
-- Initialization:
-  - [] you can get a token pair
-  - [] (**OPT**) registration is implemented
-  - [] authorization is set up correctly for the Users API
-  - [] game can be created
-- Gameplay:
-  - [] can place ships
-  - [] can fire shots
-  - [] can receive hits and misses
-  - [] can play against a bot
-  - [] game ends correctly (win/loss)
-  - [] (**OPT**) multiplayer is implemented
-  - [] multiplayer works correctly
-- Post game:
+## Objectius No Complerts
 
-  - [] (**OPT**) leaderboard is implemented
+- **Mode multijugador en temps real:**  
+  No s'ha implementat. El joc només suporta partides contra un bot.  
 
-- Additional tests (please specify):
-  - [] ...
-    - [] ...
-    - [] ...
+- **Taula de lideratge**  
 
-### Case C checklist
-
-- Summarize the interview
-
-### Test group 2
-
-Repeat the same structure as above for the second test group.
