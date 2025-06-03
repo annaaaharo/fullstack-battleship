@@ -1,81 +1,43 @@
-# Beta Testing
+# Captures de Funcionament
 
-## Testing scenarios
+Aquest apartat descriu les captures de pantalla que mostren el funcionament final del joc d'enfonsar la flota, cobrint les funcionalitats principals de la pràctica.
 
-- Case A: The game is fully functional - i.e., frontend and backend are implemented and communicate correctly. In this case, the testing is performed on the frontend by playing the game.
-- Case B: The game is partially functional - i.e., frontend is not fully connected to the backend. In this case, the testing is performed on the backend by sending requests to the API endpoints using the `api/v1/*/` endpoints or `docs/` url.
-- Case C: The backend is partially functional - i.e., the backend is not fully implemented. In this case, the testers will interview the developers about what is working and what is not, and about the main issues they encountered and discuss/advise on how to fix them.
+---
 
-## Group Information
+## Pantalla de registre:
 
-- Your group and team members:
-  - Group: [Your Group Name]
-  - Team members: [Member 1, Member 2]
+- **Descripció:** Mostra el formulari de registre d'usuaris, amb camps per a nom d'usuari, correu electrònic i contrasenya. ![Descripció de la imatge](../images/registre_front.png)
+- Desde backend veient en la llista de players com s'ha afegit correctament:
+![Descripció de la imatge](../images/registre_back.png)
 
-## Tested Group Information
+---
 
-### Test group 1
+## Pantalla de GameLobby:
 
-- Test group 1:
-  - Group: [Test Group Name]
-  - Team members: [Member 1, Member 2]
+- **Descripció:** Mostra el GameLobby on estan les partides ja començades i et pots unir a elles.  
+![Descripció de la imatge](../images/gameLobby.png)
 
-### Case A checklist
+---
 
-- Initialization:
-  - [] authentication works correctly
-  - [] (**OPT**) registration is implemented
-  - [] game can be created
-- Gameplay:
-  - [] can place ships
-  - [] can fire shots
-  - [] can receive hits and misses
-  - [] can play against a bot
-  - [] game ends correctly (win/loss)
-  - [] (**OPT**) multiplayer is implemented
-  - [] multiplayer works correctly
-- Stress Testing:
-  - [] can handle multiple concurrent games
-  - [] can handle multiple concurrent players
-  - [] game can be restarted (disconnected players can rejoin)
-  - [] behaviour when cookies are disabled
-- Post game:
+## Interfície de col·locació de vaixells:
 
-  - [] (**OPT**) leaderboard is implemented
+- **Descripció:** Mostra el tauler del jugador (10x10) amb una llista de vaixells disponibles.  
+![Descripció de la imatge](../images/front.png)
 
-- Additional tests (please specify):
-  - [] ...
-    - [] ...
-    - [] ...
+---
 
-### Case B checklist
+## Fase de joc:
 
-- Initialization:
-  - [] you can get a token pair
-  - [] (**OPT**) registration is implemented
-  - [] authorization is set up correctly for the Users API
-  - [] game can be created
-- Gameplay:
-  - [] can place ships
-  - [] can fire shots
-  - [] can receive hits and misses
-  - [] can play against a bot
-  - [] game ends correctly (win/loss)
-  - [] (**OPT**) multiplayer is implemented
-  - [] multiplayer works correctly
-- Post game:
+- **Descripció:** Mostra els dos taulers: el del jugador (amb vaixells col·locats i tirs rebuts del bot) i el de l'oponent (amb tirs realitzats per l'usuari.  
+![Descripció de la imatge](../images/jugant.png)
+- També si mirem el backend veiem que shots es va actualitzant cada cop que realitzem un.
+![Descripció de la imatge](../images/shots.png)
+---
 
-  - [] (**OPT**) leaderboard is implemented
+## Pantalla de fi del joc:
 
-- Additional tests (please specify):
-  - [] ...
-    - [] ...
-    - [] ...
+- **Descripció:** Mostra la pantalla de "Game Over", amb un missatge indicant el guanyador. 
+![Descripció de la imatge](../images/guanyat.png)
+- Desde backend en games veiem com s'actualitza el gameState amb el winner i la phase correcte.
+![Descripció de la imatge](../images/games.png)
 
-### Case C checklist
-
-- Summarize the interview
-
-### Test group 2
-
-Repeat the same structure as above for the second test group.
