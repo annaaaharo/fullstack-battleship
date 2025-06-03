@@ -3,7 +3,7 @@
 - [About](./about.md)
 
 - [Desenvolupament](#desenvolupament)
-    - [Inicialització](./backend.md)
+    - [Inicialització](./inici.md)
     - [GamePlay](./gameplay.md)
     - [Stress Testing](./StressTesting.md)
     - [Punts a destacar](./destacar.md)
