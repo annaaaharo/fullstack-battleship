@@ -3,7 +3,7 @@
 - [About](./about.md)
 
 - [Desenvolupament](#desenvolupament)
-    - [Implementació del Backend](./backend-implementacio.md)
+    - [Implementació del Backend](./backend.md)
     - [Implementació del Frontend](./frontend-implementacio.md)
 
 - [Proves](#proves)
