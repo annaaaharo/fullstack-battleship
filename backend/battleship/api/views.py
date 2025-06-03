@@ -115,39 +115,40 @@ class GameViewSet(viewsets.ModelViewSet):
     def join(self, request, pk=None):
         game = self.get_object()
         player_id = request.data.get("player")
-        
+
         try:
             player = get_object_or_404(Player, id=player_id)
         except:
             return Response({"error": "Player not found"}, status=status.HTTP_404_NOT_FOUND)
-        
-        # Verificar que el juego esté en fase waiting
-        if game.phase != "waiting":
-            return Response({"error": "Game is not waiting for players"}, status=status.HTTP_400_BAD_REQUEST)
-        
+
+        # Verificar que el juego esté en fase waiting o placement
+        if game.phase not in ["waiting", "placement"]:
+            return Response({"error": "Game is not waiting for players or in placement phase"},
+                            status=status.HTTP_400_BAD_REQUEST)
+
         # Verificar que el jugador no esté ya en el juego
         if game.players.filter(id=player.id).exists():
             return Response({"error": "Player already in this game"}, status=status.HTTP_400_BAD_REQUEST)
-        
+
         # Verificar que no haya más de 2 jugadores
         if game.players.count() >= 2:
             return Response({"error": "Game is full"}, status=status.HTTP_400_BAD_REQUEST)
-        
+
         # Añadir el jugador al juego
         game.players.add(player)
-        
-        # Si ahora hay 2 jugadores, cambiar a fase placement
-        if game.players.count() == 2:
+
+        # Si ahora hay 2 jugadores, cambiar a fase placement (si no está ya en placement)
+        if game.players.count() == 2 and game.phase != "placement":
             game.phase = "placement"
             game.save()
-            
+
             # Crear tableros para ambos jugadores
             for game_player in game.players.all():
                 Board.objects.get_or_create(game=game, player=game_player)
-        
+
         return Response({
-            "status": "joined", 
-            "game_id": game.id, 
+            "status": "joined",
+            "game_id": game.id,
             "players_count": game.players.count(),
             "phase": game.phase
         })
