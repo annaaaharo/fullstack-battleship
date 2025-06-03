@@ -12,10 +12,8 @@
   - [Punts a destacar](./destacar.md)
 
 - [Proves](#proves)
-  - [Proves Unitàries](./unitaries.md)
-  - [Proves Creuades](./creuades.md)
   - [Autoavaluació](./self-testing.md)
-  - [Proves Beta](./beta-testing.md)
+  - [Proves Creuades](./beta-testing.md)
   - [Captures de Funcionament](./captures.md)
 
 - [Desplegament](./desplegament.md)
