@@ -1,81 +1,110 @@
-# Beta Testing
+# Joc d'Enfonsar la Flota
 
-## Testing scenarios
+---
 
-- Case A: The game is fully functional - i.e., frontend and backend are implemented and communicate correctly. In this case, the testing is performed on the frontend by playing the game.
-- Case B: The game is partially functional - i.e., frontend is not fully connected to the backend. In this case, the testing is performed on the backend by sending requests to the API endpoints using the `api/v1/*/` endpoints or `docs/` url.
-- Case C: The backend is partially functional - i.e., the backend is not fully implemented. In this case, the testers will interview the developers about what is working and what is not, and about the main issues they encountered and discuss/advise on how to fix them.
+## Visió General
 
-## Group Information
+El joc es divideix en dues fases principals:
 
-- Your group and team members:
-  - Group: [Your Group Name]
-  - Team members: [Member 1, Member 2]
+- **Fase de col·locació (_placement_)**:  
+  Els jugadors (usuari i un bot oponent) col·loquen 5 vaixells de diferents mides (d'1 a 5 caselles) en un tauler de 10x10.
 
-## Tested Group Information
+- **Fase de joc (_playing_)**:  
+  Els jugadors es tornen per disparar al tauler de l'oponent.  
+  Un **encert (_hit_)** permet disparar de nou, mentre que un **error (_miss_)** passa el torn.  
+  El joc acaba quan un jugador aconsegueix **15 encerts**, enfonsant tots els vaixells de l'oponent.
 
-### Test group 1
+---
 
-- Test group 1:
-  - Group: [Test Group Name]
-  - Team members: [Member 1, Member 2]
+## Objectius
 
-### Case A checklist
+- **Frontend**:  
+  Proporcionar una interfície interactiva per col·locar vaixells i disparar, gestionant l'estat del joc amb **Pinia**.
 
-- Initialization:
-  - [] authentication works correctly
-  - [] (**OPT**) registration is implemented
-  - [] game can be created
-- Gameplay:
-  - [] can place ships
-  - [] can fire shots
-  - [] can receive hits and misses
-  - [] can play against a bot
-  - [] game ends correctly (win/loss)
-  - [] (**OPT**) multiplayer is implemented
-  - [] multiplayer works correctly
-- Stress Testing:
-  - [] can handle multiple concurrent games
-  - [] can handle multiple concurrent players
-  - [] game can be restarted (disconnected players can rejoin)
-  - [] behaviour when cookies are disabled
-- Post game:
+- **Backend**:  
+  Gestionar l'estat del joc, validar accions (col·locació de vaixells i tirs) i emmagatzemar les dades en una base de dades.
 
-  - [] (**OPT**) leaderboard is implemented
+---
 
-- Additional tests (please specify):
-  - [] ...
-    - [] ...
-    - [] ...
+## Tecnologies Utilitzades
 
-### Case B checklist
+### Frontend
 
-- Initialization:
-  - [] you can get a token pair
-  - [] (**OPT**) registration is implemented
-  - [] authorization is set up correctly for the Users API
-  - [] game can be created
-- Gameplay:
-  - [] can place ships
-  - [] can fire shots
-  - [] can receive hits and misses
-  - [] can play against a bot
-  - [] game ends correctly (win/loss)
-  - [] (**OPT**) multiplayer is implemented
-  - [] multiplayer works correctly
-- Post game:
+- **Vue.js**: Framework per a la interfície d'usuari.
+- **Pinia**: Gestió de l'estat del joc (`gamePhase`, `playerBoard`, `opponentBoard`, `playerPlacedShips`, etc.).
+- **Axios**: Crides HTTP al backend per gestionar vaixells, taulers, tirs i estats del joc.
+- **API REST**: Comunicació amb el backend per sincronitzar l'estat del joc.
 
-  - [] (**OPT**) leaderboard is implemented
+### Backend
 
-- Additional tests (please specify):
-  - [] ...
-    - [] ...
-    - [] ...
+- **Django REST Framework**: Creació de la REST-API per gestionar usuaris, jocs, vaixells i tirs.
+- **Models Django**: `User`, `Player`, `Game`, `Vessel`, `Board`, `BoardVessel`, `Shot`.
+- **JWT**: Autenticació segura amb tokens d'accés i _refresh_.
 
-### Case C checklist
+---
 
-- Summarize the interview
+## Mecànica del Joc
 
-### Test group 2
+### Fase de Col·locació
 
-Repeat the same structure as above for the second test group.
+**Accions:**
+
+- Els jugadors seleccionen un vaixell de la llista `availableShips` i el col·loquen al seu tauler (`playerBoard`) fent clic en una casella.
+- Poden rotar els vaixells (vertical o horitzontal) abans de col·locar-los.
+- Els vaixells del bot es col·loquen automàticament desde backend.
+
+**Validacions:**
+
+- Màxim 5 vaixells per jugador.
+- No es permeten superposicions ni col·locacions fora del tauler.
+- Cada vaixell col·locat s'envia a l'endpoint: POST /api/v1/boardvessels/ amb les dades:
+
+- `board`
+- `vessel`
+- `ri`, `ci` (fila i columna inicials)
+- `rf`, `cf` (fila i columna finals)
+- `alive`
+
+**Transició:**
+
+- Quan els dos jugadors han col·locat tots els vaixells (5 per tauler), el joc passa a la fase _playing_ mitjançant una crida a: POST /api/v1/games/{id}/update_phase/
+
+
+---
+
+### Fase de Joc
+
+**Accions:**
+
+- L'usuari dispara al tauler de l'oponent (`opponentBoard`) fent clic en una casella.
+- Un **encert (_hit_)** permet disparar de nou; un **error (_miss_)** passa el torn al bot.
+- El bot dispara aleatòriament al tauler del jugador (`playerBoard`).
+
+**Gestió de Tirs:**
+
+- Els tirs s'envien a: POST /api/v1/shots/ amb les dades:
+
+- `game`
+- `player`
+- `board`
+- `row`, `col`
+- `result`
+
+- Els encerts es marquen amb valors negatius (ex: `-1` per un vaixell tocat).
+- Els errors es marquen amb el valor `11`.
+
+- Es comptabilitzen els encerts amb:
+
+- `contadorHitsPlayer`
+- `contadorHitsBot`
+
+**Fi del Joc:**
+
+- Quan un jugador arriba enfosa tots els vaixells, el joc passa a _gameOver_ i es declara el guanyador amb una crida a: POST /api/v1/games/{id}/update_winner/
+
+
+
+
+
+
+
