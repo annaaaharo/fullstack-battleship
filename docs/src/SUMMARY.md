@@ -5,7 +5,7 @@
 - [Desenvolupament](#desenvolupament)
     - [Inicialització](./inici.md)
     - [GamePlay](./gameplay.md)
-    - [Stress Testing](./StressTesting.md)
+    - [Stress Testing](./stressTesting.md)
     - [Punts a destacar](./destacar.md)
 
 - [Proves](#proves)
