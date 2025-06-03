@@ -35,16 +35,25 @@ class GameSerializer(serializers.ModelSerializer):
     winner = serializers.CharField(source='winner.nickname', read_only=True, allow_null=True)
     players = serializers.SerializerMethodField()
     owner = serializers.CharField(source='owner.nickname', read_only=True, allow_null=True)
+    board_id = serializers.SerializerMethodField()
 
     class Meta:
         model = Game
-        fields = ['id', 'phase', 'turn', 'winner', 'width', 'height', 'multiplayer', 'players', 'owner', 'game_state_response']
+        fields = ['id', 'phase', 'turn', 'winner', 'width', 'height', 'multiplayer', 'players', 'owner', 'game_state_response', 'board_id']
 
     def get_game_state_response(self, obj):
         return GameStateResponseSerializer(obj, context=self.context).data
     
     def get_players(self, obj):
         return [{"id": player.id, "nickname": player.nickname} for player in obj.players.all()]
+
+    def get_board_id(self, obj):
+        player = obj.players.first()
+        if player:
+            board = Board.objects.filter(player=player, game=obj).first()
+            if board:
+                return board.id
+        return None
 
 class VesselSerializer(serializers.ModelSerializer):
     class Meta:

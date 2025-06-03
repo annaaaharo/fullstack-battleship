@@ -133,14 +133,14 @@ export const useGameStore = defineStore("game", {
         
         const gameResponse = await api.setGame(authStore.playerId);
         this.gameId = gameResponse.id;
-        this.playerBoardId = gameResponse.board_id; // Usar el board_id del response
-        console.log("🎮 New game created with ID:", this.gameId, "Player board ID:", this.playerBoardId);
+        this.playerBoardId = gameResponse.board_id;
+        console.log("🎮 New game created with ID:", this.gameId, "Player board ID (raw):", gameResponse.board_id);
+        console.log("🎮 this.playerBoardId just before check:", this.playerBoardId);
 
         if (!this.playerBoardId) {
           console.warn("No playerBoardId, fetching board...");
-          const board = await api.getOrCreateBoard(this.gameId, authStore.playerId);
-          this.playerBoardId = board.id;
         }
+
         console.log(`🎮 Game ID is: ${this.gameId}, Player Board ID is: ${this.playerBoardId}`);
 
         // Crear tablero del jugador

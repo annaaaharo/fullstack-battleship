@@ -41,35 +41,10 @@ export default {
     return AuthService.getAxiosInstance().get("/api/v1/players/");
   },
 
-  async setGame(playerId) {
-    try {
-      const response = await axiosInstance.post('/api/v1/games/', { player: playerId });
-      console.log("Juego creado, respuesta completa:", JSON.stringify(response, null, 2));
-      const responseData = response.data.data || response.data; // Handle nested data
 
-      let gameId, boardId;
-      if (responseData.game && responseData.game.id) {
-        gameId = responseData.game.id;
-        boardId = responseData.board_id;
-      } else if (responseData.id) {
-        gameId = responseData.id;
-        boardId = responseData.board_id || null;
-      } else {
-        console.error("Respuesta inesperada:", responseData);
-        throw new Error("Respuesta del backend no contiene ID de juego válido");
-      }
-
-      if (!boardId) {
-        console.warn("No board_id in response, fetching board...");
-        const boardResponse = await this.getOrCreateBoard(gameId, playerId);
-        boardId = boardResponse.id;
-      }
-
-      return { id: gameId, board_id: boardId };
-    } catch (error) {
-      console.error("Error creant joc:", error.response ? error.response.data : error.message);
-      throw error;
-    }
+  setGame(playerId) {
+    return axios.post('/api/v1/games/', { player: playerId })
+                .then(res => res.data); // ✅ Això conserva el `board_id`
   },
 
   setGameState(phase1, turn, id){

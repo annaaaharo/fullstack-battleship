@@ -58,8 +58,9 @@ class GameViewSet(viewsets.ModelViewSet):
         game = serializer.save(owner=player, phase="placement")
         game.players.add(player)
         game.save()
-        Board.objects.filter(game=game, player=player).delete()
-        board = Board.objects.create(game=game, player=player)
+        #board, created = Board.objects.get_or_create(game=game, player=player)
+        board = Board.objects.create(player=player, game=game)
+
         print(f"Tauler creat per al joc {game.id}, jugador {player.id}: board_id={board.id}")
         serializer = self.get_serializer(game)
         response_data = {
