@@ -3,8 +3,10 @@
 - [About](./about.md)
 
 - [Desenvolupament](#desenvolupament)
-    - [Implementació del Backend](./backend.md)
-    - [Implementació del Frontend](./frontend-implementacio.md)
+    - [Inicialització](./backend.md)
+    - [GamePlay](./gameplay.md)
+    - [Stress Testing](./StressTesting.md)
+    - [Punts a destacar](./destacar.md)
 
 - [Proves](#proves)
   - [Autoavaluació](./self-testing.md)
