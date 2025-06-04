@@ -27,17 +27,13 @@ const loadAvailableGames = async () => {
   error.value = "";
   try {
     const response = await api.getAvailableGames();
-    console.log("Raw API response:", response);
     const allGames = response.data.results || response.data;
-    console.log("Parsed games:", allGames);
     availableGames.value = allGames.filter(game =>
       (game.phase === 'waiting' || game.phase === 'placement') &&
       (!game.players || game.players.length < 2)
     );
-    console.log("Filtered available games:", availableGames.value);
   } catch (err) {
     error.value = "Error al carregar les partides disponibles";
-    console.error("API error:", err);
   } finally {
     loading.value = false;
   }

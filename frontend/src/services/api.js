@@ -8,7 +8,6 @@ export default {
   getAvailableShips() {
     return axiosInstance.get("/api/v1/vessels/")
       .then(response => {
-        console.log("Backend vessels response:", response.data);
         if (!response.data || response.data.length === 0) {
           console.warn("No vessels received from backend!");
         }
@@ -20,7 +19,6 @@ export default {
         }));
       })
       .catch(error => {
-        console.error("Error obtenint vaixells:", error.response ? error.response.data : error);
         throw error;
       });
   },
@@ -59,40 +57,27 @@ export default {
     return axiosInstance.get(`/api/v1/boards/?game=${gameId}&player=${playerId}`)
       .then(response => {
         if (response.data.length > 0) {
-          console.log("Tauler existent trobat:", response.data[0]);
           return response.data[0];
         } else {
           return axiosInstance.post('/api/v1/boards/', { game: gameId, player: playerId })
             .then(response => {
-              console.log("Tauler creat:", response.data);
               return response.data;
             });
         }
       })
       .catch(error => {
-        console.error('Error obtenint o creant tauler:', error);
         throw error;
       });
   },
 
-  // Obtenir board d'un jugador
-  getBoard(gameId, playerId) {
-    return axiosInstance.get(`/api/v1/boards/?game=${gameId}&player=${playerId}`);
-  },
 
   // Obtenir tots els boards d'una partida
   getGameBoards(gameId) {
     return axiosInstance.get(`/api/v1/boards/?game=${gameId}`);
   },
 
-  createGame(){
-    return axios.post("/api/v1/games/", {
-      "width": 10,
-      "height": 10,
-    });
-  },
 
-  // Col·locar vaixell (corregir endpoint)
+  // Col·locar vaixell
   placeShip(data) {
     return axiosInstance.post(`/api/v1/boardvessels/`, data);
   },
@@ -110,30 +95,6 @@ export default {
   // Unirse a una partida existente
   joinGame(gameId, playerId) {
     return axiosInstance.post(`/api/v1/games/${gameId}/join/`, { player: playerId });
-  },
-
-  // Crear un jugador bot automáticamente
-  async createBotPlayer() {
-    try {
-      // Crear un usuario bot
-      const botUsername = `bot_${Date.now()}`;
-      const botUser = await axiosInstance.post('/api/v1/users/', {
-        username: botUsername,
-        email: `${botUsername}@bot.com`,
-        password: 'botpassword123'
-      });
-      
-      // Crear un jugador bot
-      const botPlayer = await axiosInstance.post('/api/v1/players/', {
-        user: botUser.data.id,
-        nickname: `Bot_${Date.now()}`
-      });
-      
-      return botPlayer.data;
-    } catch (error) {
-      console.error('Error creating bot player:', error);
-      throw error;
-    }
   },
 
   //eliminar una partida específica

@@ -152,7 +152,7 @@ class GameStateSerializer(serializers.Serializer):
         except AttributeError:
             return None
         try:
-            board = Board.objects.get(game=obj, player=current_player)  # Canvia 'owner' per 'player'
+            board = Board.objects.get(game=obj, player=current_player)
             return PlayerStateSerializer(board).data
         except Board.DoesNotExist:
             return None
@@ -165,7 +165,7 @@ class GameStateSerializer(serializers.Serializer):
             current_player = request.user.player
         except AttributeError:
             return None
-        board = obj.board_set.exclude(player=current_player).first()  # Canvia 'owner' per 'player'
+        board = obj.board_set.exclude(player=current_player).first()
         return PlayerStateSerializer(board).data if board else None
 
 class PlayerStateSerializer(serializers.Serializer):
