@@ -6,7 +6,10 @@
 | C03   | Garcia Rovira, Èlia | Haro Fernández, Anna | 
 
 
-{{#authors eliagarcia, anna haro}}
+## Autores
+
+- [Èlia Garcia Rovira](https://github.com/eliagarcia)
+- [Anna Haro Fernández](https://github.com/annaaaharo)
 
 
 ## Contingut de la pràctica
