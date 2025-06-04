@@ -12,7 +12,7 @@ El joc es divideix en dues fases principals:
 - **Fase de joc (_playing_)**:  
   Els jugadors es tornen per disparar al tauler de l'oponent.  
   Un **encert (_hit_)** permet disparar de nou, mentre que un **error (_miss_)** passa el torn.  
-  El joc acaba quan un jugador aconsegueix **15 encerts**, enfonsant tots els vaixells de l'oponent.
+  El joc acaba quan un jugador aconsegueix enfonsar tots els vaixells de l'oponent.
 
 ---
 
@@ -92,11 +92,6 @@ El joc es divideix en dues fases principals:
 
 - Els encerts es marquen amb valors negatius (ex: `-1` per un vaixell tocat).
 - Els errors es marquen amb el valor `11`.
-
-- Es comptabilitzen els encerts amb:
-
-- `contadorHitsPlayer`
-- `contadorHitsBot`
 
 **Fi del Joc:**
 
