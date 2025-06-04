@@ -39,5 +39,5 @@ Aquest apartat descriu les captures de pantalla que mostren el funcionament fina
 - **Descripció:** Mostra la pantalla de "Game Over", amb un missatge indicant el guanyador. 
 ![Descripció de la imatge](guanyat.png)
 - Desde backend en games veiem com s'actualitza el gameState amb el winner i la phase correcte.
-![Descripció de la imatge](games.png)
+![GameOver](games.png)
 
