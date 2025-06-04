@@ -35,16 +35,25 @@ class GameSerializer(serializers.ModelSerializer):
     winner = serializers.CharField(source='winner.nickname', read_only=True, allow_null=True)
     players = serializers.SerializerMethodField()
     owner = serializers.CharField(source='owner.nickname', read_only=True, allow_null=True)
+    board_id = serializers.SerializerMethodField()
 
     class Meta:
         model = Game
-        fields = ['id', 'phase', 'turn', 'winner', 'width', 'height', 'multiplayer', 'players', 'owner', 'game_state_response']
+        fields = ['id', 'phase', 'turn', 'winner', 'width', 'height', 'multiplayer', 'players', 'owner', 'game_state_response', 'board_id']
 
     def get_game_state_response(self, obj):
         return GameStateResponseSerializer(obj, context=self.context).data
     
     def get_players(self, obj):
         return [{"id": player.id, "nickname": player.nickname} for player in obj.players.all()]
+
+    def get_board_id(self, obj):
+        player = obj.players.first()
+        if player:
+            board = Board.objects.filter(player=player, game=obj).first()
+            if board:
+                return board.id
+        return None
 
 class VesselSerializer(serializers.ModelSerializer):
     class Meta:
@@ -143,7 +152,7 @@ class GameStateSerializer(serializers.Serializer):
         except AttributeError:
             return None
         try:
-            board = Board.objects.get(game=obj, player=current_player)  # Canvia 'owner' per 'player'
+            board = Board.objects.get(game=obj, player=current_player)
             return PlayerStateSerializer(board).data
         except Board.DoesNotExist:
             return None
@@ -156,7 +165,7 @@ class GameStateSerializer(serializers.Serializer):
             current_player = request.user.player
         except AttributeError:
             return None
-        board = obj.board_set.exclude(player=current_player).first()  # Canvia 'owner' per 'player'
+        board = obj.board_set.exclude(player=current_player).first()
         return PlayerStateSerializer(board).data if board else None
 
 class PlayerStateSerializer(serializers.Serializer):

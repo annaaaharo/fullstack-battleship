@@ -42,8 +42,6 @@ export const useAuthStore = defineStore("auth", {
 
         return AuthService.login(user)
         .then(async (response) => {
-            console.log("response", response);
-            // response = JSON.parse(response); // això era una simulació, en el cas real és una resposta d'axios i podem comentar aquesta línia
             this.username = user.username;
             this.accessToken = response.data.access;
             this.refreshToken = response.data.refresh;

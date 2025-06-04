@@ -16,6 +16,9 @@ const error = ref("");
 const showMyGames = ref(false);
 
 onMounted(async () => {
+  if (!authStore.playerId) {
+    console.warn("authStore.playerId is not set, waiting for initialization...");
+  }
   await loadAvailableGames();
 });
 
@@ -25,16 +28,12 @@ const loadAvailableGames = async () => {
   try {
     const response = await api.getAvailableGames();
     const allGames = response.data.results || response.data;
-    //filtrem per partides que esperen usuaris
-    console.log("Totes les partides:", allGames);
     availableGames.value = allGames.filter(game =>
-      (game.phase === 'waiting') &&
+      (game.phase === 'waiting' || game.phase === 'placement') &&
       (!game.players || game.players.length < 2)
     );
-
   } catch (err) {
-    error.value = "Error al carregar les partidas disponibles";
-    console.error(err);
+    error.value = "Error al carregar les partides disponibles";
   } finally {
     loading.value = false;
   }

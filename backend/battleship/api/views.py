@@ -58,15 +58,14 @@ class GameViewSet(viewsets.ModelViewSet):
         game = serializer.save(owner=player, phase="placement")
         game.players.add(player)
         game.save()
-        Board.objects.filter(game=game, player=player).delete()
-        board = Board.objects.create(game=game, player=player)
-        print(f"Tauler creat per al joc {game.id}, jugador {player.id}: board_id={board.id}")
+        board = Board.objects.create(player=player, game=game)
+
         serializer = self.get_serializer(game)
         response_data = {
             "game": serializer.data,
             "board_id": board.id
         }
-        print(f"GameViewSet response: {response_data}")
+
         return Response(response_data, status=status.HTTP_201_CREATED)
 
 
@@ -83,7 +82,6 @@ class GameViewSet(viewsets.ModelViewSet):
         phase = request.data.get("phase")
         turn_str = request.data.get("turn")
         
-        # Para el turn, simplemente almacenamos el string
         game.turn = turn_str
         game.phase = phase
         game.save()
@@ -115,39 +113,39 @@ class GameViewSet(viewsets.ModelViewSet):
     def join(self, request, pk=None):
         game = self.get_object()
         player_id = request.data.get("player")
-        
+
         try:
             player = get_object_or_404(Player, id=player_id)
         except:
             return Response({"error": "Player not found"}, status=status.HTTP_404_NOT_FOUND)
-        
-        # Verificar que el juego esté en fase waiting
-        if game.phase != "waiting":
-            return Response({"error": "Game is not waiting for players"}, status=status.HTTP_400_BAD_REQUEST)
-        
+
+        # Verificar que el juego esté en fase waiting o placement
+        if game.phase not in ["waiting", "placement"]:
+            return Response({"error": "Game is not waiting for players or in placement phase"},
+                            status=status.HTTP_400_BAD_REQUEST)
+
         # Verificar que el jugador no esté ya en el juego
         if game.players.filter(id=player.id).exists():
             return Response({"error": "Player already in this game"}, status=status.HTTP_400_BAD_REQUEST)
-        
+
         # Verificar que no haya más de 2 jugadores
         if game.players.count() >= 2:
             return Response({"error": "Game is full"}, status=status.HTTP_400_BAD_REQUEST)
-        
+
         # Añadir el jugador al juego
         game.players.add(player)
-        
-        # Si ahora hay 2 jugadores, cambiar a fase placement
-        if game.players.count() == 2:
+
+        if game.players.count() == 2 and game.phase != "placement":
             game.phase = "placement"
             game.save()
-            
+
             # Crear tableros para ambos jugadores
             for game_player in game.players.all():
                 Board.objects.get_or_create(game=game, player=game_player)
-        
+
         return Response({
-            "status": "joined", 
-            "game_id": game.id, 
+            "status": "joined",
+            "game_id": game.id,
             "players_count": game.players.count(),
             "phase": game.phase
         })
@@ -235,14 +233,12 @@ class BoardViewSet(viewsets.ModelViewSet):
         game = get_object_or_404(Game, id=self.request.data.get('game'))
         board, created = Board.objects.get_or_create(game=game, player=player)
         serializer.save(player=player, game=game)
-        print(f"Tauler {'creat' if created else 'obtingut'} a BoardViewSet: board_id={board.id}, game_id={game.id}, player_id={player.id}")
+
 
 def all_vessels_placed(board):
-    # Cada jugador ha de col·locar exactament 5 vaixells (1 de cada tipus)
     return BoardVessel.objects.filter(board=board).count() == 5
 
 def ensure_default_vessels():
-    """Crear vaixells per defecte si no existeixen"""
     vessels_data = [
         {"id": 1, "size": 1, "name": "Patrol Boat"},
         {"id": 2, "size": 2, "name": "Destroyer"},
@@ -259,7 +255,6 @@ def ensure_default_vessels():
                 "name": vessel_data["name"]
             }
         )
-        print(f"Vaixells creats/verificats: {Vessel.objects.count()}")  # Debug
 
 class BoardVesselViewSet(viewsets.ModelViewSet):
     queryset = BoardVessel.objects.all()
@@ -270,38 +265,28 @@ class BoardVesselViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         board_id = self.request.data.get('board')
         vessel_id = self.request.data.get('vessel')
-        print(f"Creant BoardVessel: board_id={board_id}, vessel_id={vessel_id}, request_data={self.request.data}")
 
-        # Fetch board and vessel for serializer
+
         board = get_object_or_404(Board, id=board_id)
         vessel = get_object_or_404(Vessel, id=vessel_id)
 
-        # Save BoardVessel (serializer validation handles duplicates and max count)
         board_vessel = serializer.save(board=board, vessel=vessel)
-        print(f"✅ BoardVessel creado: id={board_vessel.id}, board_id={board_id}, vessel_id={vessel_id}")
 
-        # Update game state if necessary
         game = board_vessel.board.game
         vessel_count = BoardVessel.objects.filter(board=board).count()
-        print(f"Vaixells col·locats al tauler {board.id}: {vessel_count}")
 
         if vessel_count >= 5:
-            print(f"Jugador {board.player.nickname} ha colocado todos los barcos ({vessel_count})")
             all_boards = game.boards.all()
-            print(f"Tableros en el juego: {[b.id for b in all_boards]}")
 
             if game.players.count() == 1:
-                print("Juego de un solo jugador detectado")
                 game.phase = "playing"
                 game.turn = board.player.user.username
                 game.save()
-                print(f"CAMBIANDO A FASE PLAYING (1 jugador) - turn: {game.turn}")
             else:
                 all_players_ready = all(
                     BoardVessel.objects.filter(board=game_board).count() >= 5
                     for game_board in all_boards
                 )
-                print(f"Todos los jugadores preparados: {all_players_ready}")
 
                 if all_players_ready:
                     game.phase = "playing"
@@ -312,7 +297,6 @@ class BoardVesselViewSet(viewsets.ModelViewSet):
                     )
                     game.turn = human_player.user.username
                     game.save()
-                    print(f"CAMBIANDO A FASE PLAYING (2+ jugadores) - turn: {game.turn}")
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
@@ -324,7 +308,6 @@ class ShotViewSet(viewsets.ModelViewSet):
     ordering_fields = ['id']
 
     def perform_create(self, serializer):
-        # Obtener datos del frontend en lugar de hardcodear
         player = get_object_or_404(models.Player, id=self.request.data.get('player'))
         game = get_object_or_404(Game, id=self.request.data.get('game'))
         board = get_object_or_404(Board, id=self.request.data.get('board'))
