@@ -1,81 +1,43 @@
-# Beta Testing
+# Conclusions i Reptes
 
-## Testing scenarios
+Aquest apartat resumeix les conclusions del desenvolupament de la pràctica del joc d'enfonsar la flota, reflexionant sobre els resultats aconseguits i els aprenentatges obtinguts.
 
-- Case A: The game is fully functional - i.e., frontend and backend are implemented and communicate correctly. In this case, the testing is performed on the frontend by playing the game.
-- Case B: The game is partially functional - i.e., frontend is not fully connected to the backend. In this case, the testing is performed on the backend by sending requests to the API endpoints using the `api/v1/*/` endpoints or `docs/` url.
-- Case C: The backend is partially functional - i.e., the backend is not fully implemented. In this case, the testers will interview the developers about what is working and what is not, and about the main issues they encountered and discuss/advise on how to fix them.
+## Conclusions
 
-## Group Information
+### Assoliment dels objectius
 
-- Your group and team members:
-  - Group: [Your Group Name]
-  - Team members: [Member 1, Member 2]
+- La pràctica ha complert la majoria dels objectius establerts en l'enunciat.  
+  Al backend, s'ha implementat una aplicació CRUD completa amb Django REST Framework, gestionant models com User, Player, Game, Vessel i Shot, amb autenticació segura via JWT.  
+  La lògica del joc, incloent col·locació de vaixells, tirs i canvis de fase, es gestiona eficaçment mitjançant endpoints com `/api/v1/boardvessels/` i `/api/v1/shots/`.
 
-## Tested Group Information
+- Al frontend, s'ha desenvolupat una interfície interactiva amb Vue.js i Pinia, permetent una experiència d'usuari fluida per registrar-se, col·locar vaixells i jugar, amb comunicació segura amb el backend via Axios.
 
-### Test group 1
+### Treball en equip
 
-- Test group 1:
-  - Group: [Test Group Name]
-  - Team members: [Member 1, Member 2]
+- Hem treballat de manera coordinada i simultània, com es pot veure en els pull requests al repositori de GitHub.
 
-### Case A checklist
+- La comunicació constant i participativa, tant en revisions de codi com en reunions, va permetre repartir tasques (backend i frontend) i resoldre problemes de manera eficient, com es detalla a l'apartat d'organització.
 
-- Initialization:
-  - [] authentication works correctly
-  - [] (**OPT**) registration is implemented
-  - [] game can be created
-- Gameplay:
-  - [] can place ships
-  - [] can fire shots
-  - [] can receive hits and misses
-  - [] can play against a bot
-  - [] game ends correctly (win/loss)
-  - [] (**OPT**) multiplayer is implemented
-  - [] multiplayer works correctly
-- Stress Testing:
-  - [] can handle multiple concurrent games
-  - [] can handle multiple concurrent players
-  - [] game can be restarted (disconnected players can rejoin)
-  - [] behaviour when cookies are disabled
-- Post game:
+### Superació de dificultats
 
-  - [] (**OPT**) leaderboard is implemented
+- La principal dificultat va ser la transició d'una lògica inicial basada en el frontend a una integració completa amb el backend, especialment en la col·locació de vaixells i els canvis de fase.
 
-- Additional tests (please specify):
-  - [] ...
-    - [] ...
-    - [] ...
+- Aquest repte es va superar amb validacions estrictes i sincronització mitjançant l'API, com es descriu a l'apartat de dificultats.
 
-### Case B checklist
+- Altres obstacles, com la gestió de concurrència i la robustesa de les crides API, es van abordar amb proves exhaustives i optimitzacions.
 
-- Initialization:
-  - [] you can get a token pair
-  - [] (**OPT**) registration is implemented
-  - [] authorization is set up correctly for the Users API
-  - [] game can be created
-- Gameplay:
-  - [] can place ships
-  - [] can fire shots
-  - [] can receive hits and misses
-  - [] can play against a bot
-  - [] game ends correctly (win/loss)
-  - [] (**OPT**) multiplayer is implemented
-  - [] multiplayer works correctly
-- Post game:
+### Proves i resultats
 
-  - [] (**OPT**) leaderboard is implemented
+- Les proves unitàries, creuades, d'autoavaluació i beta han demostrat que el joc és funcional i estable, suportant:
+  - múltiples partides i jugadors concurrents,
+  - reanudació de partides,
+  com es detalla als apartats corresponents.
 
-- Additional tests (please specify):
-  - [] ...
-    - [] ...
-    - [] ...
+- Les captures de pantalla, descrites a l'apartat de captures, mostren el funcionament final, des del registre fins a la finalització del joc, evidenciant una interfície clara i una experiència d'usuari acceptable.
 
-### Case C checklist
+### Aprenentatges
 
-- Summarize the interview
+- Hem après a integrar un frontend i un backend en una aplicació web complexa, gestionant estats i comunicacions API.
+- Hem millorat les habilitats en metodologies àgils, treball en equip i resolució de problemes tècnics, especialment en validacions i sincronització de dades.
+- Hem guanyat experiència en proves de resistència i compatibilitat, assegurant que el sistema és robust en diferents escenaris.
 
-### Test group 2
-
-Repeat the same structure as above for the second test group.
