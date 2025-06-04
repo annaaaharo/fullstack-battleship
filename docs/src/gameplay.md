@@ -16,33 +16,6 @@ El joc es divideix en dues fases principals:
 
 ---
 
-## Objectius
-
-- **Frontend**:  
-  Proporcionar una interfície interactiva per col·locar vaixells i disparar, gestionant l'estat del joc amb **Pinia**.
-
-- **Backend**:  
-  Gestionar l'estat del joc, validar accions (col·locació de vaixells i tirs) i emmagatzemar les dades en una base de dades.
-
----
-
-## Tecnologies Utilitzades
-
-### Frontend
-
-- **Vue.js**: Framework per a la interfície d'usuari.
-- **Pinia**: Gestió de l'estat del joc (`gamePhase`, `playerBoard`, `opponentBoard`, `playerPlacedShips`, etc.).
-- **Axios**: Crides HTTP al backend per gestionar vaixells, taulers, tirs i estats del joc.
-- **API REST**: Comunicació amb el backend per sincronitzar l'estat del joc.
-
-### Backend
-
-- **Django REST Framework**: Creació de la REST-API per gestionar usuaris, jocs, vaixells i tirs.
-- **Models Django**: `User`, `Player`, `Game`, `Vessel`, `Board`, `BoardVessel`, `Shot`.
-- **JWT**: Autenticació segura amb tokens d'accés i _refresh_.
-
----
-
 ## Mecànica del Joc
 
 ### Fase de Col·locació
@@ -95,7 +68,7 @@ El joc es divideix en dues fases principals:
 
 **Fi del Joc:**
 
-- Quan un jugador arriba enfosa tots els vaixells, el joc passa a _gameOver_ i es declara el guanyador amb una crida a: POST /api/v1/games/{id}/update_winner/
+- Quan un jugador arriba enfosa tots els vaixells, el joc passa a _gameOver_ i es declara el guanyador amb una crida a: POST /api/v1/games/{id}/update_winner/. On també es queda enregistrat el nom del guanyador.
 
 
 
