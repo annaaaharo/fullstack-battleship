@@ -5,6 +5,12 @@ En aquest projecte trobareu el codi base per a la pràctica 2. Veureu que teniu 
 
 En [l'enunciat de la pràctica](https://github.com/SoftwareDistribuitUB-2025/Enunciat_P2) teniu guies per generar un projecte bàsic tant per a la part de backend com de frontend. En aquest projecte ja us donem aquesta part feta, per facilitar una estructura comuna.
 
+### Documentació del projecte
+
+La documentació completa de la pràctica està disponible a:
+
+**[https://softwaredistribuitub-2025.github.io/pr2-c03/](https://softwaredistribuitub-2025.github.io/pr2-c03/)**
+
 
 
 
